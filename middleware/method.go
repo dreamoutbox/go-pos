@@ -3,27 +3,29 @@ package middleware
 import (
 	"net/http"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
-func MethodOverride() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if c.Request.Method == http.MethodPost {
-			// Check form parameter
-			method := c.PostForm("_method")
+func MethodOverride(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			// Parse form if URL-encoded to get _method field
+			contentType := r.Header.Get("Content-Type")
+			if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
+				_ = r.ParseForm()
+			}
+
+			method := r.FormValue("_method")
 			if method == "" {
-				// Also check query parameter
-				method = c.Query("_method")
+				method = r.URL.Query().Get("_method")
 			}
 
 			if method != "" {
 				method = strings.ToUpper(method)
 				if method == "PATCH" || method == "PUT" || method == "DELETE" {
-					c.Request.Method = method
+					r.Method = method
 				}
 			}
 		}
-		c.Next()
-	}
+		next.ServeHTTP(w, r)
+	})
 }

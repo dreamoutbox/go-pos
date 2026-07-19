@@ -163,9 +163,6 @@ func main() {
 	// Load HTML custom templates
 	r.HTMLRender = loadTemplates()
 
-	// Middlewares
-	r.Use(middleware.MethodOverride())
-
 	// Static Assets
 	r.Static("/static", "./static")
 	// Make sure upload directory exists and serve
@@ -240,7 +237,11 @@ func main() {
 	})
 
 	fmt.Printf("Starting Go POS server on port %s...\n", config.AppConfig.Port)
-	_ = r.Run(":" + config.AppConfig.Port)
+	server := &http.Server{
+		Addr:    ":" + config.AppConfig.Port,
+		Handler: middleware.MethodOverride(r),
+	}
+	_ = server.ListenAndServe()
 }
 
 func seedDefaultData() {
