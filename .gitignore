@@ -40,4 +40,4 @@ data
 
 # Build output
 go-pos
-
+tmp/main
