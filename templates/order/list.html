@@ -1,0 +1,50 @@
+{{define "content"}}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">Sales Orders History</h4>
+        <a href="/orders/new" class="btn btn-primary btn-sm"><i class="bi bi-cart-plus me-1"></i>New Sale</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr class="text-muted small">
+                    <th>Order ID</th>
+                    <th>Date / Time</th>
+                    <th>Cashier</th>
+                    <th class="text-end">Total Amount</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .orders}}
+                <tr>
+                    <td><span class="fw-bold">#{{.ID}}</span></td>
+                    <td class="small text-muted">{{formatDate .CreatedAt}}</td>
+                    <td>{{.User.Name}}</td>
+                    <td class="text-end fw-semibold text-primary">฿{{formatMoney .Total}}</td>
+                    <td>
+                        {{if eq .Status "paid"}}
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Paid</span>
+                        {{else}}
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Pending</span>
+                        {{end}}
+                    </td>
+                    <td class="text-end">
+                        <a href="/orders/{{.ID}}" class="btn btn-outline-secondary btn-sm me-1"><i class="bi bi-eye"></i> View</a>
+                        <a href="/orders/{{.ID}}/receipt" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i> Print</a>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        No orders recorded yet. Open POS screen to sell items.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

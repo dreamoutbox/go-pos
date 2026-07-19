@@ -36,4 +36,8 @@ go.work.sum
 *.sqlite
 
 # Data directory
-./data
+data
+
+# Build output
+go-pos
+

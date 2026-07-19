@@ -1,0 +1,131 @@
+{{define "content"}}
+<div class="row g-4 justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Order Details #{{.order.ID}}</h4>
+                    <span class="small text-muted">Created at {{formatDate .order.CreatedAt}}</span>
+                </div>
+                <div>
+                    <a href="/orders" class="btn btn-outline-secondary btn-sm me-1">Back to Sales</a>
+                    <a href="/orders/{{.order.ID}}/receipt" target="_blank" class="btn btn-primary btn-sm"><i
+                            class="bi bi-printer me-1"></i>Print Receipt</a>
+                </div>
+            </div>
+
+            <!-- Order Info Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4">
+                    <div class="bg-light p-3 rounded">
+                        <div class="small text-muted text-uppercase">Cashier Staff</div>
+                        <div class="fw-semibold">{{.order.User.Name}}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="bg-light p-3 rounded">
+                        <div class="small text-muted text-uppercase">Order Status</div>
+                        <div class="mt-1">
+                            {{if eq .order.Status "paid"}}
+                            <span
+                                class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Paid</span>
+                            {{else}}
+                            <span
+                                class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Pending</span>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="bg-light p-3 rounded h-100 d-flex flex-column justify-content-center">
+                        <div class="small text-muted text-uppercase">Paid Date</div>
+                        <div class="fw-semibold">
+                            {{if .order.PaidAt}}{{formatDate .order.PaidAt}}{{else}}-{{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <h5 class="fw-bold mb-3">Order Items</h5>
+            <div class="table-responsive mb-4">
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Product Name</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Qty</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .order.OrderItems}}
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">{{.Name}}</span>
+                            </td>
+                            <td class="text-end">฿{{formatMoney .Price}}</td>
+                            <td class="text-end fw-semibold">{{.Quantity}}</td>
+                            <td class="text-end">฿{{formatMoney .Subtotal}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals calculation info -->
+            <div class="row justify-content-end">
+                <div class="col-12 col-md-5">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Subtotal</span>
+                        <span class="fw-semibold">฿{{formatMoney .order.Subtotal}}</span>
+                    </div>
+                    {{if .shop.TaxEnabled}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">VAT ({{.shop.TaxRate}}%{{if .shop.TaxIncluded}}
+                            Included{{end}})</span>
+                        <span class="fw-semibold text-danger">฿{{formatMoney .order.TaxAmount}}</span>
+                    </div>
+                    {{end}}
+                    <div class="d-flex justify-content-between mb-4 border-top pt-2">
+                        <span class="fw-bold">Grand Total</span>
+                        <span class="fw-bold fs-5 text-primary">฿{{formatMoney .order.Total}}</span>
+                    </div>
+
+                    {{if eq .order.Status "pending"}}
+                    <button onclick="collectPayment()" class="btn btn-success w-100 py-2 fw-semibold">
+                        <i class="bi bi-cash me-1"></i>Collect Payment & Close
+                    </button>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function collectPayment() {
+        if (confirm("Collect payment for this order?")) {
+            fetch("/orders/{{.order.ID}}/pay", {
+                method: "PATCH",
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else if (data.error) {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("An error occurred during payment processing.");
+                });
+        }
+    }
+</script>
+{{end}}

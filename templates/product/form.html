@@ -1,0 +1,74 @@
+{{define "content"}}
+<div class="card p-4" style="max-width: 600px; margin: 0 auto;">
+    <h4 class="fw-bold mb-4">{{if .isEdit}}Edit Product Properties{{else}}Create New Product{{end}}</h4>
+
+    {{if .error}}
+    <div class="alert alert-danger mb-3">{{.error}}</div>
+    {{end}}
+
+    <form action="{{if .isEdit}}/products/{{.product.ID}}{{else}}/products{{end}}" method="POST" enctype="multipart/form-data">
+        {{if .isEdit}}
+        <input type="hidden" name="_method" value="PATCH">
+        {{end}}
+
+        <div class="mb-3">
+            <label for="name" class="form-label small fw-semibold text-muted">Product Name</label>
+            <input type="text" class="form-control" id="name" name="name" 
+                   value="{{if .isEdit}}{{.product.Name}}{{else}}{{if .input}}{{.input.Name}}{{end}}{{end}}" required>
+            {{if .errors.Name}}
+            <div class="text-danger small mt-1">{{.errors.Name}}</div>
+            {{end}}
+        </div>
+
+        <div class="mb-3">
+            <label for="sku" class="form-label small fw-semibold text-muted">SKU / Barcode</label>
+            <input type="text" class="form-control" id="sku" name="sku" 
+                   value="{{if .isEdit}}{{.product.SKU}}{{else}}{{if .input}}{{.input.SKU}}{{end}}{{end}}">
+            {{if .errors.SKU}}
+            <div class="text-danger small mt-1">{{.errors.SKU}}</div>
+            {{end}}
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-6">
+                <label for="cost" class="form-label small fw-semibold text-muted">Cost Price (฿)</label>
+                <input type="number" step="0.01" class="form-control" id="cost" name="cost" 
+                       value="{{if .isEdit}}{{.product.Cost}}{{else}}{{if .input}}{{.input.Cost}}{{else}}0.00{{end}}{{end}}" required>
+                {{if .errors.Cost}}
+                <div class="text-danger small mt-1">{{.errors.Cost}}</div>
+                {{end}}
+            </div>
+            <div class="col-6">
+                <label for="price" class="form-label small fw-semibold text-muted">Selling Price (฿)</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price" 
+                       value="{{if .isEdit}}{{.product.Price}}{{else}}{{if .input}}{{.input.Price}}{{end}}{{end}}" required>
+                {{if .errors.Price}}
+                <div class="text-danger small mt-1">{{.errors.Price}}</div>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label small fw-semibold text-muted">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{if .isEdit}}{{.product.Description}}{{else}}{{if .input}}{{.input.Description}}{{end}}{{end}}</textarea>
+        </div>
+
+        <div class="mb-4">
+            <label for="image" class="form-label small fw-semibold text-muted">Product Image</label>
+            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            {{if .isEdit}}
+                {{if .product.ImagePath}}
+                <div class="mt-2 small text-muted">
+                    Current Image: <a href="{{.product.ImagePath}}" target="_blank" class="text-decoration-none">View current image</a>
+                </div>
+                {{end}}
+            {{end}}
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="/products" class="btn btn-light">Cancel</a>
+            <button type="submit" class="btn btn-primary">{{if .isEdit}}Save Changes{{else}}Save Product{{end}}</button>
+        </div>
+    </form>
+</div>
+{{end}}

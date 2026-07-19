@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt - #{{.order.ID}}</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: #000;
+            background-color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .receipt-container {
+            max-width: 320px; /* Standard 80mm thermal receipt size */
+            margin: 0 auto;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        .no-print-btn {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: sans-serif;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        @media print {
+            .no-print-btn {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="no-print-btn" onclick="window.print()">Print Receipt</button>
+
+    <div class="receipt-container">
+        <!-- Shop Details Header -->
+        <div class="text-center">
+            <h2 class="bold" style="margin: 0 0 5px 0;">{{.shop.Name}}</h2>
+            {{if .shop.TaxEnabled}}
+                {{if .shop.TaxName}}<div class="bold">{{.shop.TaxName}}</div>{{end}}
+                {{if .shop.TaxAddress}}<div>{{.shop.TaxAddress}}</div>{{end}}
+                {{if .shop.TaxID}}<div>Tax ID: {{.shop.TaxID}}</div>{{end}}
+                <div class="bold" style="margin-top: 3px;">TAX INVOICE (ABB.)</div>
+            {{else}}
+                {{if .shop.Address}}<div>{{.shop.Address}}</div>{{end}}
+                {{if .shop.Phone}}<div>Phone: {{.shop.Phone}}</div>{{end}}
+            {{end}}
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Receipt Info -->
+        <div>
+            <div>Date: {{formatDate .order.CreatedAt}}</div>
+            <div>Order Ref: #{{.order.ID}}</div>
+            <div>Cashier: {{.order.User.Name}}</div>
+            <div>Status: {{.order.Status}}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Sale Items List -->
+        <table>
+            <thead>
+                <tr>
+                    <th class="bold" style="text-align: left;">Item</th>
+                    <th class="bold text-right" style="width: 40px;">Qty</th>
+                    <th class="bold text-right" style="width: 70px;">Price</th>
+                    <th class="bold text-right" style="width: 70px;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .order.OrderItems}}
+                <tr>
+                    <td>{{.Name}}</td>
+                    <td class="text-right">{{.Quantity}}</td>
+                    <td class="text-right">{{formatMoney .Price}}</td>
+                    <td class="text-right">{{formatMoney .Subtotal}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <!-- Totals & Taxes calculation breakdown -->
+        <div>
+            <table>
+                <tr>
+                    <td>Subtotal:</td>
+                    <td class="text-right">฿{{formatMoney .order.Subtotal}}</td>
+                </tr>
+                {{if .shop.TaxEnabled}}
+                <tr>
+                    <td>VAT ({{.shop.TaxRate}}%{{if .shop.TaxIncluded}} Included{{end}}):</td>
+                    <td class="text-right">฿{{formatMoney .order.TaxAmount}}</td>
+                </tr>
+                {{end}}
+                <tr class="bold">
+                    <td style="font-size: 15px;">TOTAL:</td>
+                    <td class="text-right" style="font-size: 15px;">฿{{formatMoney .order.Total}}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="text-center" style="margin-top: 15px;">
+            Thank you for shopping with us!<br>
+            Please come again.
+        </div>
+    </div>
+</body>
+</html>

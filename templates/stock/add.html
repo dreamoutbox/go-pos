@@ -1,0 +1,32 @@
+{{define "content"}}
+<div class="card p-4" style="max-width: 500px; margin: 0 auto;">
+    <h4 class="fw-bold mb-4">Add Inventory Stock</h4>
+
+    <div class="mb-3">
+        <label class="form-label small fw-semibold text-muted">Product</label>
+        <div class="fw-bold text-dark fs-5">{{.product.Name}}</div>
+        <div class="small text-muted">Current Stock: {{.product.Stock}} items</div>
+    </div>
+
+    {{if .error}}
+    <div class="alert alert-danger mb-3">{{.error}}</div>
+    {{end}}
+
+    <form action="/stock/{{.product.ID}}/add" method="POST">
+        <div class="mb-3">
+            <label for="quantity" class="form-label small fw-semibold text-muted">Quantity to Add</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" min="1" required placeholder="e.g. 50">
+        </div>
+
+        <div class="mb-4">
+            <label for="note" class="form-label small fw-semibold text-muted">Audit Note / Comment</label>
+            <input type="text" class="form-control" id="note" name="note" placeholder="e.g. Restock from supplier">
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="/stock" class="btn btn-light">Cancel</a>
+            <button type="submit" class="btn btn-success">Add Stock</button>
+        </div>
+    </form>
+</div>
+{{end}}

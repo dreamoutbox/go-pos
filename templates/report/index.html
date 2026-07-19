@@ -1,0 +1,247 @@
+{{define "content"}}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">Business Reports & Analytics</h4>
+    <div class="d-flex align-items-center gap-2">
+        <select class="form-select form-select-sm" id="rangeSelector" onchange="fetchReportData()" style="width: 150px;">
+            <option value="today" selected>Today</option>
+            <option value="week">Past 7 Days</option>
+            <option value="month">Past 30 Days</option>
+        </select>
+        <button onclick="printReport()" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer me-1"></i>Print Report</button>
+    </div>
+</div>
+
+<!-- Summaries Cards Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Total Orders</span>
+            <h3 class="fw-bold mt-1 text-dark" id="summaryOrders">0</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Total Items Sold</span>
+            <h3 class="fw-bold mt-1 text-dark" id="summaryItems">0</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Sales Revenue</span>
+            <h3 class="fw-bold mt-1 text-primary" id="summaryRevenue">฿0.00</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Net Profit</span>
+            <h3 class="fw-bold mt-1 text-success" id="summaryProfit">฿0.00</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Sales Revenue & Profit Trend Chart -->
+    <div class="col-12 col-xl-8">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3">Revenue & Profit Trends</h5>
+            <div style="height: 320px; position: relative;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Selling Products -->
+    <div class="col-12 col-xl-4">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3">Top 5 Products</h5>
+            <div style="height: 320px; position: relative;" class="d-flex align-items-center justify-content-center">
+                <canvas id="productsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Low Stock warning list -->
+    <div class="col-12">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3 text-danger">Inventory Warnings (Low Stock)</h5>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Product Name</th>
+                            <th>SKU</th>
+                            <th class="text-end">Current Stock</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lowStockTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No low stock items. All inventory levels are healthy!</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let trendChart = null;
+let productsChart = null;
+
+function fetchReportData() {
+    const range = document.getElementById("rangeSelector").value;
+    
+    fetch(`/reports/data?range=${range}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        updateSummaries(data.summary);
+        renderCharts(data.daily_stats, data.top_products);
+        updateLowStockTable(data.low_stock);
+    })
+    .catch(err => console.error("Failed to load report data", err));
+}
+
+function updateSummaries(summary) {
+    document.getElementById("summaryOrders").innerText = summary.orders || 0;
+    document.getElementById("summaryItems").innerText = summary.items_sold || 0;
+    document.getElementById("summaryRevenue").innerText = "฿" + (summary.revenue || 0).toFixed(2);
+    document.getElementById("summaryProfit").innerText = "฿" + (summary.profit || 0).toFixed(2);
+}
+
+function renderCharts(dailyStats, topProducts) {
+    // 1. Trend Chart (Line / Bar combination)
+    const dates = dailyStats.map(s => s.date);
+    const revenues = dailyStats.map(s => s.revenue);
+    const profits = dailyStats.map(s => s.profit);
+
+    if (trendChart) {
+        trendChart.destroy();
+    }
+
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Sales Revenue',
+                    data: revenues,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                },
+                {
+                    label: 'Net Profit',
+                    data: profits,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return '฿' + value; }
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Top Products Doughnut Chart
+    const productNames = topProducts.map(p => p.name);
+    const productQtys = topProducts.map(p => p.quantity);
+
+    if (productsChart) {
+        productsChart.destroy();
+    }
+
+    const prodCtx = document.getElementById('productsChart').getContext('2d');
+    if (productNames.length === 0) {
+        // Draw empty indicator placeholder if no data
+        productsChart = null;
+        prodCtx.clearRect(0, 0, 300, 300);
+        return;
+    }
+
+    productsChart = new Chart(prodCtx, {
+        type: 'doughnut',
+        data: {
+            labels: productNames,
+            datasets: [{
+                data: productQtys,
+                backgroundColor: [
+                    '#4f46e5',
+                    '#06b6d4',
+                    '#f59e0b',
+                    '#ec4899',
+                    '#10b981'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+function updateLowStockTable(lowStock) {
+    const tbody = document.getElementById("lowStockTableBody");
+    tbody.innerHTML = "";
+
+    if (!lowStock || lowStock.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No low stock items. All inventory levels are healthy!</td></tr>`;
+        return;
+    }
+
+    lowStock.forEach(p => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><span class="fw-semibold">${p.name}</span></td>
+            <td><code class="small text-muted">${p.sku || "-"}</code></td>
+            <td class="text-end text-danger fw-bold">${p.stock} items</td>
+            <td class="text-end">
+                <a href="/stock/${p.ID}/add" class="btn btn-outline-success btn-xs"><i class="bi bi-plus-lg"></i> Restock</a>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function printReport() {
+    const range = document.getElementById("rangeSelector").value;
+    window.open(`/reports/print?range=${range}`, '_blank');
+}
+
+// Initial Fetch
+window.onload = function() {
+    fetchReportData();
+};
+</script>
+{{end}}
