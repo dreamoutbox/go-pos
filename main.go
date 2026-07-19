@@ -228,6 +228,13 @@ func main() {
 			// Tax settings
 			admin.GET("/tax/settings", handlers.TaxSettingsForm)
 			admin.PATCH("/tax/settings", handlers.UpdateTaxSettings)
+
+			// Shop outlets management
+			admin.GET("/shops", handlers.ListShops)
+			admin.GET("/shops/new", handlers.NewShopForm)
+			admin.POST("/shops", handlers.CreateShop)
+			admin.GET("/shops/:id/edit", handlers.EditShopForm)
+			admin.PATCH("/shops/:id", handlers.UpdateShop)
 		}
 	}
 

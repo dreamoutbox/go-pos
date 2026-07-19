@@ -1,0 +1,70 @@
+{{define "content"}}
+<div class="card p-4" style="max-width: 600px; margin: 0 auto;">
+    <h4 class="fw-bold mb-4">{{if .isEdit}}Edit Shop Details{{else}}Register New Shop Outlet{{end}}</h4>
+
+    {{if .error}}
+    <div class="alert alert-danger mb-3">{{.error}}</div>
+    {{end}}
+
+    <form action="{{if .isEdit}}/shops/{{.targetShop.ID}}{{else}}/shops{{end}}" method="POST">
+        {{if .isEdit}}
+        <input type="hidden" name="_method" value="PATCH">
+        {{end}}
+
+        <div class="mb-3">
+            <label for="name" class="form-label small fw-semibold text-muted">Shop / Outlet Name</label>
+            <input type="text" class="form-control" id="name" name="name" 
+                   value="{{if .isEdit}}{{.targetShop.Name}}{{else}}{{if .input}}{{.input.Name}}{{end}}{{end}}" required>
+            {{if .errors.Name}}
+            <div class="text-danger small mt-1">{{.errors.Name}}</div>
+            {{end}}
+        </div>
+
+        <div class="mb-3">
+            <label for="phone" class="form-label small fw-semibold text-muted">Phone Number</label>
+            <input type="text" class="form-control" id="phone" name="phone" 
+                   value="{{if .isEdit}}{{.targetShop.Phone}}{{else}}{{if .input}}{{.input.Phone}}{{end}}{{end}}">
+        </div>
+
+        <div class="mb-4">
+            <label for="address" class="form-label small fw-semibold text-muted">Address Description</label>
+            <textarea class="form-control" id="address" name="address" rows="3">{{if .isEdit}}{{.targetShop.Address}}{{else}}{{if .input}}{{.input.Address}}{{end}}{{end}}</textarea>
+        </div>
+
+        {{if not .isEdit}}
+        <hr class="my-4">
+        <h5 class="fw-bold mb-3 text-secondary">Default Admin User for New Shop</h5>
+        <p class="text-muted small mb-3">This credentials will be used to log in and manage the new shop outlet.</p>
+
+        <div class="mb-3">
+            <label for="admin_name" class="form-label small fw-semibold text-muted">Administrator Name</label>
+            <input type="text" class="form-control" id="admin_name" name="admin_name" value="{{if .input}}{{.input.AdminName}}{{end}}" required>
+            {{if .errors.AdminName}}
+            <div class="text-danger small mt-1">{{.errors.AdminName}}</div>
+            {{end}}
+        </div>
+
+        <div class="mb-3">
+            <label for="admin_email" class="form-label small fw-semibold text-muted">Admin Email Address</label>
+            <input type="email" class="form-control" id="admin_email" name="admin_email" value="{{if .input}}{{.input.AdminEmail}}{{end}}" required>
+            {{if .errors.AdminEmail}}
+            <div class="text-danger small mt-1">{{.errors.AdminEmail}}</div>
+            {{end}}
+        </div>
+
+        <div class="mb-4">
+            <label for="admin_password" class="form-label small fw-semibold text-muted">Admin Password</label>
+            <input type="password" class="form-control" id="admin_password" name="admin_password" minlength="4" required>
+            {{if .errors.AdminPassword}}
+            <div class="text-danger small mt-1">{{.errors.AdminPassword}}</div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <div class="d-flex justify-content-between">
+            <a href="/shops" class="btn btn-light">Cancel</a>
+            <button type="submit" class="btn btn-primary">{{if .isEdit}}Save Details{{else}}Register Shop{{end}}</button>
+        </div>
+    </form>
+</div>
+{{end}}

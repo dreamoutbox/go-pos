@@ -1,0 +1,54 @@
+{{define "content"}}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">Shop Outlets Management</h4>
+        <a href="/shops/new" class="btn btn-primary"><i class="bi bi-shop me-2"></i>Add Shop Outlet</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr class="text-muted small">
+                    <th>Shop ID</th>
+                    <th>Shop Name</th>
+                    <th>Address</th>
+                    <th>Phone</th>
+                    <th>Tax Config</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .shops}}
+                <tr>
+                    <td><span class="fw-bold">#{{.ID}}</span></td>
+                    <td>
+                        <span class="fw-semibold">{{.Name}}</span>
+                        {{if eq .ID $.shop.ID}}
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-2">Active Shop</span>
+                        {{end}}
+                    </td>
+                    <td>{{if .Address}}{{.Address}}{{else}}-{{end}}</td>
+                    <td>{{if .Phone}}{{.Phone}}{{else}}-{{end}}</td>
+                    <td>
+                        {{if .TaxEnabled}}
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle small">VAT {{.TaxRate}}% ({{if .TaxIncluded}}Incl{{else}}Excl{{end}})</span>
+                        {{else}}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle small">No VAT</span>
+                        {{end}}
+                    </td>
+                    <td class="text-end">
+                        <a href="/shops/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Edit Details</a>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        No shops created yet.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
