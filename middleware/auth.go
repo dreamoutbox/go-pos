@@ -59,15 +59,16 @@ func AuthRequired() gin.HandlerFunc {
 	}
 }
 
-func AdminRequired() gin.HandlerFunc {
+// SuperuserRequired allows only the superuser role (global shop management).
+func SuperuserRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleVal, exists := c.Get("role")
-		if !exists || roleVal.(string) != "admin" {
+		if !exists || roleVal.(string) != "superuser" {
 			if isAPIRequest(c) {
-				c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
+				c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Superuser access required"})
 			} else {
 				c.HTML(http.StatusForbidden, "error/403.html", gin.H{
-					"error": "Forbidden: Admin access required",
+					"error": "Forbidden: Superuser access required",
 				})
 			}
 			c.Abort()
@@ -76,6 +77,36 @@ func AdminRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// ShopOwnerRequired allows superuser and shop_owner roles.
+func ShopOwnerRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleVal, exists := c.Get("role")
+		if !exists {
+			c.Abort()
+			return
+		}
+		role := roleVal.(string)
+		if role != "superuser" && role != "shop_owner" {
+			if isAPIRequest(c) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Shop owner or superuser access required"})
+			} else {
+				c.HTML(http.StatusForbidden, "error/403.html", gin.H{
+					"error": "Forbidden: Shop owner or superuser access required",
+				})
+			}
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// AdminRequired is kept as an alias for ShopOwnerRequired for backward compatibility.
+func AdminRequired() gin.HandlerFunc {
+	return ShopOwnerRequired()
+}
+
 
 func isAPIRequest(c *gin.Context) bool {
 	return strings.HasPrefix(c.Request.URL.Path, "/api/") || c.GetHeader("Accept") == "application/json"

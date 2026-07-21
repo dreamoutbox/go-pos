@@ -42,8 +42,8 @@
         <div class="mb-4">
             <label for="role" class="form-label small fw-semibold text-muted">Access Role</label>
             <select class="form-select" id="role" name="role" required>
-                <option value="staff" {{if .isEdit}}{{if eq .targetUser.Role "staff"}}selected{{end}}{{else}}selected{{end}}>Staff (Selling goods)</option>
-                <option value="admin" {{if .isEdit}}{{if eq .targetUser.Role "admin"}}selected{{end}}{{end}}>Admin (Full management access)</option>
+                <option value="cashier" {{if .isEdit}}{{if eq .targetUser.Role "cashier"}}selected{{end}}{{else}}selected{{end}}>Cashier (Selling goods only)</option>
+                <option value="shop_owner" {{if .isEdit}}{{if eq .targetUser.Role "shop_owner"}}selected{{end}}{{end}}>Shop Owner (Manage shop, products, users)</option>
             </select>
             {{if .errors.Role}}
             <div class="text-danger small mt-1">{{.errors.Role}}</div>

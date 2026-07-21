@@ -8,19 +8,21 @@ import (
 	"github.com/dreamoutbox/go-pos/models"
 	"github.com/dreamoutbox/go-pos/utils"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type CreateUserInput struct {
 	Name     string `form:"name" json:"name" validate:"required,min=2"`
 	Email    string `form:"email" json:"email" validate:"required,email"`
 	Password string `form:"password" json:"password" validate:"required,min=4"`
-	Role     string `form:"role" json:"role" validate:"required,oneof=admin staff"`
+	Role     string `form:"role" json:"role" validate:"required,oneof=shop_owner cashier"`
+	ShopID   uint   `form:"shop_id" json:"shop_id"`
 }
 
 type UpdateUserInput struct {
 	Name  string `form:"name" json:"name" validate:"required,min=2"`
 	Email string `form:"email" json:"email" validate:"required,email"`
-	Role  string `form:"role" json:"role" validate:"required,oneof=admin staff"`
+	Role  string `form:"role" json:"role" validate:"required,oneof=shop_owner cashier"`
 }
 
 type ChangePasswordInput struct {
@@ -28,16 +30,31 @@ type ChangePasswordInput struct {
 }
 
 func ListUsers(c *gin.Context) {
+	role := c.MustGet("role").(string)
 	shopID := c.MustGet("shopID").(uint)
 
 	var users []models.User
-	if err := config.DB.Where("shop_id = ?", shopID).Find(&users).Error; err != nil {
+	var query *gorm.DB
+	if role == "superuser" {
+		// Superuser sees all users across all shops
+		query = config.DB.Preload("Shop").Find(&users)
+	} else {
+		// Shop owner sees only users in their shop
+		query = config.DB.Where("shop_id = ?", shopID).Find(&users)
+	}
+	if err := query.Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": err.Error()})
 		return
 	}
 
+	var shops []models.Shop
+	if role == "superuser" {
+		config.DB.Find(&shops)
+	}
+
 	c.HTML(http.StatusOK, "user/list.html", gin.H{
 		"users": users,
+		"shops": shops,
 		"user":  c.MustGet("user"),
 		"shop":  c.MustGet("shop"),
 	})

@@ -26,7 +26,7 @@ func (r CustomRender) Instance(name string, data interface{}) render.Render {
 	standalones := map[string]bool{
 		"auth/login.html":      true,
 		"receipt/receipt.html": true,
-		"report/report.html":    true,
+		"report/report.html":   true,
 		"error/403.html":       true,
 		"error/404.html":       true,
 		"error/500.html":       true,
@@ -78,7 +78,7 @@ func loadTemplates() CustomRender {
 	standalones := map[string]bool{
 		"auth/login.html":      true,
 		"receipt/receipt.html": true,
-		"report/report.html":    true,
+		"report/report.html":   true,
 		"error/403.html":       true,
 		"error/404.html":       true,
 		"error/500.html":       true,
@@ -200,41 +200,49 @@ func main() {
 		auth.GET("/reports/data", handlers.ReportDataJSON)
 		auth.GET("/reports/print", handlers.PrintableReport)
 
-		// Admin Panel Routes
-		admin := auth.Group("/")
-		admin.Use(middleware.AdminRequired())
+		// Admin Panel Routes — accessible by shop_owner and superuser
+		shopAdmin := auth.Group("/")
+		shopAdmin.Use(middleware.ShopOwnerRequired())
 		{
-			// User management (Admin)
-			admin.GET("/users", handlers.ListUsers)
-			admin.GET("/users/new", handlers.NewUserForm)
-			admin.POST("/users", handlers.CreateUser)
-			admin.GET("/users/:id/edit", handlers.EditUserForm)
-			admin.PATCH("/users/:id", handlers.UpdateUser)
-			admin.PATCH("/users/:id/password", handlers.ChangePassword)
+			// User management
+			shopAdmin.GET("/users", handlers.ListUsers)
+			shopAdmin.GET("/users/new", handlers.NewUserForm)
+			shopAdmin.POST("/users", handlers.CreateUser)
+			shopAdmin.GET("/users/:id/edit", handlers.EditUserForm)
+			shopAdmin.PATCH("/users/:id", handlers.UpdateUser)
+			shopAdmin.PATCH("/users/:id/password", handlers.ChangePassword)
 
 			// Product creation & editing
-			admin.GET("/products/new", handlers.NewProductForm)
-			admin.POST("/products", handlers.CreateProduct)
-			admin.GET("/products/:id/edit", handlers.EditProductForm)
-			admin.PATCH("/products/:id", handlers.UpdateProduct)
-			admin.DELETE("/products/:id", handlers.DeleteProduct)
+			shopAdmin.GET("/products/new", handlers.NewProductForm)
+			shopAdmin.POST("/products", handlers.CreateProduct)
+			shopAdmin.GET("/products/:id/edit", handlers.EditProductForm)
+			shopAdmin.PATCH("/products/:id", handlers.UpdateProduct)
+			shopAdmin.DELETE("/products/:id", handlers.DeleteProduct)
 
 			// Stock updates & audit history
-			admin.GET("/stock/:productID/add", handlers.AddStockForm)
-			admin.POST("/stock/:productID/add", handlers.AddStock)
-			admin.PATCH("/stock/:productID", handlers.EditStock)
-			admin.GET("/stock/history", handlers.StockHistory)
+			shopAdmin.GET("/stock/:productID/add", handlers.AddStockForm)
+			shopAdmin.POST("/stock/:productID/add", handlers.AddStock)
+			shopAdmin.PATCH("/stock/:productID", handlers.EditStock)
+			shopAdmin.GET("/stock/history", handlers.StockHistory)
 
 			// Tax settings
-			admin.GET("/tax/settings", handlers.TaxSettingsForm)
-			admin.PATCH("/tax/settings", handlers.UpdateTaxSettings)
+			shopAdmin.GET("/tax/settings", handlers.TaxSettingsForm)
+			shopAdmin.PATCH("/tax/settings", handlers.UpdateTaxSettings)
 
-			// Shop outlets management
-			admin.GET("/shops", handlers.ListShops)
-			admin.GET("/shops/new", handlers.NewShopForm)
-			admin.POST("/shops", handlers.CreateShop)
-			admin.GET("/shops/:id/edit", handlers.EditShopForm)
-			admin.PATCH("/shops/:id", handlers.UpdateShop)
+			// My Shop self-service settings (shop_owner edits their own shop)
+			shopAdmin.GET("/shop/settings", handlers.MyShopSettingsForm)
+			shopAdmin.PATCH("/shop/settings", handlers.UpdateMyShopSettings)
+		}
+
+		// Superuser-only Routes — global shop management
+		superAdmin := auth.Group("/")
+		superAdmin.Use(middleware.SuperuserRequired())
+		{
+			superAdmin.GET("/shops", handlers.ListShops)
+			superAdmin.GET("/shops/new", handlers.NewShopForm)
+			superAdmin.POST("/shops", handlers.CreateShop)
+			superAdmin.GET("/shops/:id/edit", handlers.EditShopForm)
+			superAdmin.PATCH("/shops/:id", handlers.UpdateShop)
 		}
 	}
 
@@ -243,7 +251,7 @@ func main() {
 		c.HTML(http.StatusNotFound, "error/404.html", nil)
 	})
 
-	fmt.Printf("Starting Go POS server on port %s...\n", config.AppConfig.Port)
+	fmt.Printf("Starting Go POS server on http://localhost:%s\n", config.AppConfig.Port)
 	server := &http.Server{
 		Addr:    ":" + config.AppConfig.Port,
 		Handler: middleware.MethodOverride(r),
@@ -266,12 +274,12 @@ func seedDefaultData() {
 			panic("failed to seed default shop: " + err.Error())
 		}
 
-		// Create default admin user
+		// Create default superuser
 		admin := models.User{
 			ShopID: shop.ID,
 			Email:  "admin@pos.local",
 			Name:   "Administrator",
-			Role:   "admin",
+			Role:   "superuser",
 		}
 		if err := admin.SetPassword("admin"); err != nil {
 			panic("failed to set admin password: " + err.Error())
@@ -281,9 +289,10 @@ func seedDefaultData() {
 		}
 
 		fmt.Println("==================================================")
-		fmt.Println("FIRST RUN DETECTED: Default shop & admin user created.")
-		fmt.Println("Admin Email: admin@pos.local")
-		fmt.Println("Password   : admin")
-		fmt.Println("==================================================")
+		fmt.Println("FIRST RUN DETECTED: Default shop & superuser created.")
+		fmt.Println("Email   : admin@pos.local")
+		fmt.Println("Password: admin")
+		fmt.Println("Role    : superuser")
+		fmt.Println("==========================================")
 	}
 }

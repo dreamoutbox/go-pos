@@ -116,7 +116,7 @@ func CreateShop(c *gin.Context) {
 		ShopID: newShop.ID,
 		Email:  input.AdminEmail,
 		Name:   input.AdminName,
-		Role:   "admin",
+		Role:   "shop_owner",
 	}
 	if err := newAdmin.SetPassword(input.AdminPassword); err != nil {
 		tx.Rollback()
@@ -223,4 +223,59 @@ func UpdateShop(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusSeeOther, "/shops")
+}
+
+// MyShopSettingsForm shows the shop owner a form to edit their own shop's basic info.
+func MyShopSettingsForm(c *gin.Context) {
+	shop := c.MustGet("shop").(models.Shop)
+	c.HTML(http.StatusOK, "shop/settings.html", gin.H{
+		"targetShop": shop,
+		"msg":        c.Query("msg"),
+		"user":       c.MustGet("user"),
+		"shop":       shop,
+	})
+}
+
+// UpdateMyShopSettings saves name/phone/address for the current user's own shop.
+func UpdateMyShopSettings(c *gin.Context) {
+	shop := c.MustGet("shop").(models.Shop)
+
+	var input ShopFormInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.HTML(http.StatusBadRequest, "shop/settings.html", gin.H{
+			"error":      "Invalid form input.",
+			"targetShop": shop,
+			"user":       c.MustGet("user"),
+			"shop":       shop,
+		})
+		return
+	}
+
+	if err := utils.Validate.Struct(input); err != nil {
+		errors := utils.FormatValidationError(err)
+		c.HTML(http.StatusUnprocessableEntity, "shop/settings.html", gin.H{
+			"errors":     errors,
+			"input":      input,
+			"targetShop": shop,
+			"user":       c.MustGet("user"),
+			"shop":       shop,
+		})
+		return
+	}
+
+	shop.Name = input.Name
+	shop.Address = input.Address
+	shop.Phone = input.Phone
+
+	if err := config.DB.Save(&shop).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "shop/settings.html", gin.H{
+			"error":      "Failed to update shop details: " + err.Error(),
+			"targetShop": shop,
+			"user":       c.MustGet("user"),
+			"shop":       shop,
+		})
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/shop/settings?msg=Shop+info+updated+successfully")
 }

@@ -30,37 +30,45 @@
             </div>
             <div class="list-group list-group-flush mt-3">
                 <a href="/"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-speedometer2 me-3"></i>Dashboard</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-speedometer2"></i>Dashboard</a>
                 <a href="/orders/new"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-cart me-3"></i>New Order (POS)</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-cart"></i>New Order (POS)</a>
                 <a href="/orders"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-receipt me-3"></i>Sales Orders</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-receipt"></i>Sales Orders</a>
                 <a href="/products"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-box me-3"></i>Products</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-box"></i>Products</a>
                 <a href="/stock"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-boxes me-3"></i>Stock Inventory</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-boxes"></i>Stock Inventory</a>
                 <a href="/reports"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-graph-up me-3"></i>Reports & Analytics</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-graph-up"></i>Reports & Analytics</a>
 
-                {{if eq .user.Role "admin"}}
+                {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
                 <hr class="sidebar-divider my-2 border-white-10">
                 <div class="sidebar-header px-4 py-2 text-uppercase text-white-50 small fw-bold">Admin Panel</div>
+
+                {{if eq .user.Role "superuser"}}
                 <a href="/shops"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-shop me-3"></i>Shops</a>
-                <a href="/users"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-people me-3"></i>Users</a>
-                <a href="/tax/settings"
-                    class="list-group-item list-group-item-action py-3 px-4 bg-transparent border-0 text-white-50"><i
-                        class="bi bi-percent me-3"></i>VAT Settings</a>
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-shop"></i>Shops</a>
                 {{end}}
+
+                <a href="/users"
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-people"></i>Users</a>
+                <a href="/tax/settings"
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-percent"></i>VAT Settings</a>
+                <a href="/shop/settings"
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-gear"></i>Shop Settings</a>
+                {{end}}
+
             </div>
         </div>
         <!-- /#sidebar-wrapper -->

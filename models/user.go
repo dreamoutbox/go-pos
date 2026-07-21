@@ -12,7 +12,7 @@ type User struct {
 	Email        string `gorm:"uniqueIndex;not null" json:"email" validate:"required,email"`
 	PasswordHash string `gorm:"not null" json:"-"`
 	Name         string `gorm:"not null" json:"name" validate:"required,min=2"`
-	Role         string `gorm:"default:'staff'" json:"role" validate:"required,oneof=admin staff"`
+	Role         string `gorm:"default:'cashier'" json:"role" validate:"required,oneof=superuser shop_owner cashier"`
 }
 
 func (u *User) SetPassword(password string) error {
