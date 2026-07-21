@@ -4,13 +4,25 @@
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 class="fw-bold mb-1">Order Details #{{.order.ID}}</h4>
+                    <h4 class="fw-bold mb-1">Order Details {{if .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</h4>
                     <span class="small text-muted">Created at {{formatDate .order.CreatedAt}}</span>
                 </div>
-                <div>
-                    <a href="/orders" class="btn btn-outline-secondary btn-sm me-1">Back to Sales</a>
-                    <a href="/orders/{{.order.ID}}/receipt" target="_blank" class="btn btn-primary btn-sm"><i
+                <div class="d-flex gap-2">
+                    <a href="/orders" class="btn btn-outline-secondary btn-sm">Back to Sales</a>
+                    <a href="/orders/{{.order.ID}}/receipt" target="_blank" class="btn btn-outline-primary btn-sm"><i
                             class="bi bi-printer me-1"></i>Print Receipt</a>
+                    {{if or (eq .order.Status "paid") (eq .order.Status "partially_refunded")}}
+                    <div class="dropdown">
+                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-file-earmark-diff me-1"></i>Issue Document
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/orders/{{.order.ID}}/refund"><i class="bi bi-arrow-return-left me-2 text-danger"></i>Issue Refund (RFD)</a></li>
+                            <li><a class="dropdown-item" href="/orders/{{.order.ID}}/credit_note"><i class="bi bi-file-earmark-minus me-2 text-warning"></i>Issue Credit Note (CDN)</a></li>
+                            <li><a class="dropdown-item" href="/orders/{{.order.ID}}/debit_note"><i class="bi bi-file-earmark-plus me-2 text-info"></i>Issue Debit Note (DBN)</a></li>
+                        </ul>
+                    </div>
+                    {{end}}
                 </div>
             </div>
 
@@ -27,11 +39,13 @@
                         <div class="small text-muted text-uppercase">Order Status</div>
                         <div class="mt-1">
                             {{if eq .order.Status "paid"}}
-                            <span
-                                class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Paid</span>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Paid</span>
+                            {{else if eq .order.Status "partially_refunded"}}
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-2 py-1">Partial Refund</span>
+                            {{else if eq .order.Status "refunded"}}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-2 py-1">Refunded</span>
                             {{else}}
-                            <span
-                                class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Pending</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Pending</span>
                             {{end}}
                         </div>
                     </div>
@@ -74,7 +88,7 @@
             </div>
 
             <!-- Totals calculation info -->
-            <div class="row justify-content-end">
+            <div class="row justify-content-end mb-4">
                 <div class="col-12 col-md-5">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">Subtotal</span>
@@ -99,6 +113,69 @@
                     {{end}}
                 </div>
             </div>
+
+            <!-- Linked Documents Section -->
+            {{if or .refunds .creditNotes .debitNotes}}
+            <hr class="my-4">
+            <h5 class="fw-bold mb-3">Linked Adjustment Documents</h5>
+
+            {{if .refunds}}
+            <div class="mb-3">
+                <h6 class="text-muted small fw-bold text-uppercase"><i class="bi bi-arrow-return-left text-danger me-1"></i>Refunds Issued</h6>
+                <div class="list-group">
+                    {{range .refunds}}
+                    <a href="/refunds/{{.ID}}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{.Code}}</strong> <span class="text-muted small ms-2">by {{.User.Name}} on {{formatDate .CreatedAt}}</span>
+                            {{if .Reason}}<div class="small text-secondary mt-1">Reason: {{.Reason}}</div>{{end}}
+                        </div>
+                        <span class="fw-bold text-danger">-฿{{formatMoney .Total}}</span>
+                    </a>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+
+            {{if .creditNotes}}
+            <div class="mb-3">
+                <h6 class="text-muted small fw-bold text-uppercase"><i class="bi bi-file-earmark-minus text-warning me-1"></i>Credit Notes Issued</h6>
+                <div class="list-group">
+                    {{range .creditNotes}}
+                    <a href="/credit_notes/{{.ID}}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{.Code}}</strong> <span class="text-muted small ms-2">by {{.User.Name}} on {{formatDate .CreatedAt}}</span>
+                            {{if .Reason}}<div class="small text-secondary mt-1">Reason: {{.Reason}}</div>{{end}}
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold text-warning">-฿{{formatMoney .Total}}</span>
+                            <span class="btn btn-xs btn-outline-secondary ms-2" onclick="event.preventDefault(); window.open('/credit_notes/{{.ID}}/print', '_blank');"><i class="bi bi-printer"></i> Print</span>
+                        </div>
+                    </a>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+
+            {{if .debitNotes}}
+            <div class="mb-3">
+                <h6 class="text-muted small fw-bold text-uppercase"><i class="bi bi-file-earmark-plus text-info me-1"></i>Debit Notes Issued</h6>
+                <div class="list-group">
+                    {{range .debitNotes}}
+                    <a href="/debit_notes/{{.ID}}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{.Code}}</strong> <span class="text-muted small ms-2">by {{.User.Name}} on {{formatDate .CreatedAt}}</span>
+                            {{if .Reason}}<div class="small text-secondary mt-1">Reason: {{.Reason}}</div>{{end}}
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold text-info">+฿{{formatMoney .Total}}</span>
+                            <span class="btn btn-xs btn-outline-secondary ms-2" onclick="event.preventDefault(); window.open('/debit_notes/{{.ID}}/print', '_blank');"><i class="bi bi-printer"></i> Print</span>
+                        </div>
+                    </a>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+            {{end}}
         </div>
     </div>
 </div>

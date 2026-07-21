@@ -12,7 +12,7 @@
 </div>
 
 <!-- Summaries Cards Grid -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
     <div class="col-6 col-md-3 col-xl">
         <div class="card p-3 text-center h-100">
             <span class="text-muted small fw-semibold text-uppercase">Total Orders</span>
@@ -47,6 +47,27 @@
         <div class="card p-3 text-center h-100">
             <span class="text-muted small fw-semibold text-uppercase">Net Profit</span>
             <h3 class="fw-bold mt-1 text-success" id="summaryProfit">฿0.00</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+        <div class="card p-3 text-center h-100 border-danger border-opacity-25 bg-danger bg-opacity-10">
+            <span class="text-danger small fw-bold text-uppercase"><i class="bi bi-arrow-return-left me-1"></i>Total Refunds (RFD)</span>
+            <h4 class="fw-bold mt-1 text-danger mb-0" id="summaryRefunds">฿0.00</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card p-3 text-center h-100 border-warning border-opacity-25 bg-warning bg-opacity-10">
+            <span class="text-warning small fw-bold text-uppercase"><i class="bi bi-file-earmark-minus me-1"></i>Total Credit Notes (CDN)</span>
+            <h4 class="fw-bold mt-1 text-warning mb-0" id="summaryCreditNotes">฿0.00</h4>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card p-3 text-center h-100 border-info border-opacity-25 bg-info bg-opacity-10">
+            <span class="text-info small fw-bold text-uppercase"><i class="bi bi-file-earmark-plus me-1"></i>Total Debit Notes (DBN)</span>
+            <h4 class="fw-bold mt-1 text-info mb-0" id="summaryDebitNotes">฿0.00</h4>
         </div>
     </div>
 </div>
@@ -128,6 +149,9 @@ function updateSummaries(summary) {
     document.getElementById("summaryNet").innerText = "฿" + (summary.net_sales || 0).toFixed(2);
     document.getElementById("summaryVAT").innerText = "฿" + (summary.vat_payable || 0).toFixed(2);
     document.getElementById("summaryProfit").innerText = "฿" + (summary.profit || 0).toFixed(2);
+    document.getElementById("summaryRefunds").innerText = "฿" + (summary.total_refunds || 0).toFixed(2);
+    document.getElementById("summaryCreditNotes").innerText = "฿" + (summary.total_credit_notes || 0).toFixed(2);
+    document.getElementById("summaryDebitNotes").innerText = "฿" + (summary.total_debit_notes || 0).toFixed(2);
 }
 
 function renderCharts(dailyStats, topProducts) {

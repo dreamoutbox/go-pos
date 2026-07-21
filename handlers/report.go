@@ -22,13 +22,16 @@ type DailyStat struct {
 }
 
 type SummaryStats struct {
-	Revenue    float64 `json:"revenue"`
-	Profit     float64 `json:"profit"`
-	Orders     int64   `json:"orders"`
-	ItemsSold  int64   `json:"items_sold"`
-	GrossSales float64 `json:"gross_sales"` // Total Sales Including VAT
-	NetSales   float64 `json:"net_sales"`   // Total Sales Excluding VAT
-	VATPayable float64 `json:"vat_payable"` // Net VAT Due
+	Revenue          float64 `json:"revenue"`
+	Profit           float64 `json:"profit"`
+	Orders           int64   `json:"orders"`
+	ItemsSold        int64   `json:"items_sold"`
+	GrossSales       float64 `json:"gross_sales"` // Total Sales Including VAT
+	NetSales         float64 `json:"net_sales"`   // Total Sales Excluding VAT
+	VATPayable       float64 `json:"vat_payable"` // Net VAT Due
+	TotalRefunds     float64 `json:"total_refunds"`
+	TotalCreditNotes float64 `json:"total_credit_notes"`
+	TotalDebitNotes  float64 `json:"total_debit_notes"`
 }
 
 // computeVATBreakdown calculates gross/net/VAT from the raw total collected.
@@ -82,13 +85,23 @@ func ReportDataJSON(c *gin.Context) {
 
 	// 1. Fetch Orders for calculations
 	var orders []models.Order
-	err := config.DB.Where("shop_id = ? AND status = ? AND created_at >= ?", shopID, "paid", startDate).
+	err := config.DB.Where("shop_id = ? AND status IN (?, ?, ?) AND created_at >= ?", shopID, "paid", "partially_refunded", "refunded", startDate).
 		Preload("OrderItems").
 		Find(&orders).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Fetch Refunds, Credit Notes, Debit Notes
+	var refunds []models.Refund
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&refunds)
+
+	var creditNotes []models.CreditNote
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&creditNotes)
+
+	var debitNotes []models.DebitNote
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&debitNotes)
 
 	// 2. Aggregate Summaries
 	var summary SummaryStats
@@ -118,8 +131,21 @@ func ReportDataJSON(c *gin.Context) {
 		dailyMap[dateStr].Profit += orderProfit
 	}
 
-	// VAT breakdown over total revenue
-	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(summary.Revenue, shop)
+	for _, r := range refunds {
+		summary.TotalRefunds += r.Total
+	}
+	for _, cn := range creditNotes {
+		summary.TotalCreditNotes += cn.Total
+	}
+	for _, dbn := range debitNotes {
+		summary.TotalDebitNotes += dbn.Total
+	}
+
+	// Adjusted net revenue = Orders + Debit Notes - Refunds - Credit Notes
+	adjustedRevenue := summary.Revenue + summary.TotalDebitNotes - summary.TotalRefunds - summary.TotalCreditNotes
+
+	// VAT breakdown over adjusted revenue
+	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(adjustedRevenue, shop)
 
 	// Format daily list
 	var dailyStats []DailyStat
@@ -140,7 +166,7 @@ func ReportDataJSON(c *gin.Context) {
 	config.DB.Table("order_items").
 		Select("order_items.name as name, sum(order_items.quantity) as quantity, sum(order_items.subtotal) as revenue").
 		Joins("JOIN orders ON order_items.order_id = orders.id").
-		Where("orders.shop_id = ? AND orders.status = ? AND orders.created_at >= ?", shopID, "paid", startDate).
+		Where("orders.shop_id = ? AND orders.status IN (?, ?, ?) AND orders.created_at >= ?", shopID, "paid", "partially_refunded", "refunded", startDate).
 		Group("order_items.name").
 		Order("quantity DESC").
 		Limit(5).
@@ -179,13 +205,22 @@ func PrintableReport(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	err := config.DB.Where("shop_id = ? AND status = ? AND created_at >= ?", shopID, "paid", startDate).
+	err := config.DB.Where("shop_id = ? AND status IN (?, ?, ?) AND created_at >= ?", shopID, "paid", "partially_refunded", "refunded", startDate).
 		Preload("OrderItems").
 		Find(&orders).Error
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": err.Error()})
 		return
 	}
+
+	var refunds []models.Refund
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&refunds)
+
+	var creditNotes []models.CreditNote
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&creditNotes)
+
+	var debitNotes []models.DebitNote
+	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&debitNotes)
 
 	var summary SummaryStats
 	summary.Orders = int64(len(orders))
@@ -196,13 +231,24 @@ func PrintableReport(c *gin.Context) {
 			summary.Profit += item.Subtotal - (item.Cost * float64(item.Quantity))
 		}
 	}
-	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(summary.Revenue, shop)
+	for _, r := range refunds {
+		summary.TotalRefunds += r.Total
+	}
+	for _, cn := range creditNotes {
+		summary.TotalCreditNotes += cn.Total
+	}
+	for _, dbn := range debitNotes {
+		summary.TotalDebitNotes += dbn.Total
+	}
+
+	adjustedRevenue := summary.Revenue + summary.TotalDebitNotes - summary.TotalRefunds - summary.TotalCreditNotes
+	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(adjustedRevenue, shop)
 
 	var topProducts []TopProduct
 	config.DB.Table("order_items").
 		Select("order_items.name as name, sum(order_items.quantity) as quantity, sum(order_items.subtotal) as revenue").
 		Joins("JOIN orders ON order_items.order_id = orders.id").
-		Where("orders.shop_id = ? AND orders.status = ? AND orders.created_at >= ?", shopID, "paid", startDate).
+		Where("orders.shop_id = ? AND orders.status IN (?, ?, ?) AND orders.created_at >= ?", shopID, "paid", "partially_refunded", "refunded", startDate).
 		Group("order_items.name").
 		Order("quantity DESC").
 		Limit(10).

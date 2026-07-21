@@ -8,11 +8,12 @@ import (
 
 type Order struct {
 	gorm.Model
+	Code        string      `gorm:"index" json:"code"` // e.g. ORD-202607-00001
 	ShopID      uint        `gorm:"not null;index" json:"shop_id"`
 	Shop        Shop        `json:"shop" gorm:"foreignKey:ShopID"`
 	UserID      uint        `gorm:"not null" json:"user_id"` // Cashier
 	User        User        `json:"user" gorm:"foreignKey:UserID"`
-	Status      string      `gorm:"default:'pending'" json:"status"` // "pending" | "paid"
+	Status      string      `gorm:"default:'pending'" json:"status"` // "pending" | "paid" | "partially_refunded" | "refunded"
 	Subtotal    float64     `json:"subtotal"`
 	TaxAmount   float64     `json:"tax_amount"`
 	Total       float64     `json:"total"`

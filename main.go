@@ -24,12 +24,14 @@ type CustomRender struct {
 
 func (r CustomRender) Instance(name string, data interface{}) render.Render {
 	standalones := map[string]bool{
-		"auth/login.html":      true,
-		"receipt/receipt.html": true,
-		"report/report.html":   true,
-		"error/403.html":       true,
-		"error/404.html":       true,
-		"error/500.html":       true,
+		"auth/login.html":        true,
+		"receipt/receipt.html":   true,
+		"report/report.html":     true,
+		"credit_note/print.html": true,
+		"debit_note/print.html":  true,
+		"error/403.html":         true,
+		"error/404.html":         true,
+		"error/500.html":         true,
 	}
 
 	tmplName := "base"
@@ -86,12 +88,14 @@ func loadTemplates() CustomRender {
 	}
 
 	standalones := map[string]bool{
-		"auth/login.html":      true,
-		"receipt/receipt.html": true,
-		"report/report.html":   true,
-		"error/403.html":       true,
-		"error/404.html":       true,
-		"error/500.html":       true,
+		"auth/login.html":        true,
+		"receipt/receipt.html":   true,
+		"report/report.html":     true,
+		"credit_note/print.html": true,
+		"debit_note/print.html":  true,
+		"error/403.html":         true,
+		"error/404.html":         true,
+		"error/500.html":         true,
 	}
 
 	err := filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
@@ -163,7 +167,17 @@ func main() {
 		&models.StockHistory{},
 		&models.Order{},
 		&models.OrderItem{},
+		&models.DocumentSequence{},
+		&models.Refund{},
+		&models.RefundItem{},
+		&models.CreditNote{},
+		&models.CreditNoteItem{},
+		&models.DebitNote{},
+		&models.DebitNoteItem{},
 	)
+
+	// Backfill codes for legacy orders
+	backfillOrderCodes()
 
 	// Seed default data if database is empty
 	seedDefaultData()
@@ -209,6 +223,26 @@ func main() {
 		auth.GET("/reports", handlers.ReportDashboard)
 		auth.GET("/reports/data", handlers.ReportDataJSON)
 		auth.GET("/reports/print", handlers.PrintableReport)
+
+		// Refunds
+		auth.GET("/refunds", handlers.ListRefunds)
+		auth.GET("/orders/:id/refund", handlers.NewRefundForm)
+		auth.POST("/orders/:id/refund", handlers.CreateRefund)
+		auth.GET("/refunds/:id", handlers.ShowRefund)
+
+		// Credit Notes
+		auth.GET("/credit_notes", handlers.ListCreditNotes)
+		auth.GET("/orders/:id/credit_note", handlers.NewCreditNoteForm)
+		auth.POST("/orders/:id/credit_note", handlers.CreateCreditNote)
+		auth.GET("/credit_notes/:id", handlers.ShowCreditNote)
+		auth.GET("/credit_notes/:id/print", handlers.PrintCreditNote)
+
+		// Debit Notes
+		auth.GET("/debit_notes", handlers.ListDebitNotes)
+		auth.GET("/orders/:id/debit_note", handlers.NewDebitNoteForm)
+		auth.POST("/orders/:id/debit_note", handlers.CreateDebitNote)
+		auth.GET("/debit_notes/:id", handlers.ShowDebitNote)
+		auth.GET("/debit_notes/:id/print", handlers.PrintDebitNote)
 
 		// Admin Panel Routes — accessible by shop_owner and superuser
 		shopAdmin := auth.Group("/")
@@ -307,5 +341,21 @@ func seedDefaultData() {
 		fmt.Println("Password: admin")
 		fmt.Println("Role    : superuser")
 		fmt.Println("==========================================")
+	}
+}
+
+func backfillOrderCodes() {
+	var orders []models.Order
+	if err := config.DB.Where("code IS NULL OR code = ''").Order("id ASC").Find(&orders).Error; err == nil {
+		for _, order := range orders {
+			tx := config.DB.Begin()
+			code, err := utils.GenerateDocumentCode(tx, order.ShopID, "ORD", order.CreatedAt)
+			if err == nil {
+				tx.Model(&order).Update("code", code)
+				tx.Commit()
+			} else {
+				tx.Rollback()
+			}
+		}
 	}
 }

@@ -1,0 +1,132 @@
+{{define "content"}}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-minus me-2 text-warning"></i>Issue Credit Note
+                        (CDN)</h4>
+                    <p class="text-muted small mb-0">For Order: <strong>{{if
+                            .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</strong></p>
+                </div>
+                <a href="/orders/{{.order.ID}}" class="btn btn-outline-secondary btn-sm"><i
+                        class="bi bi-arrow-left me-1"></i>Back to Order</a>
+            </div>
+
+            <form id="cnForm" onsubmit="submitCreditNote(event)">
+                <div class="mb-4">
+                    <label for="reason" class="form-label small fw-semibold text-muted">Reason for Credit Note <span
+                            class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="reason" name="reason"
+                        placeholder="e.g. Return of goods, billing price correction, discount" required>
+                </div>
+
+                <h6 class="fw-bold mb-3 text-secondary text-uppercase"
+                    style="font-size: 0.75rem; letter-spacing: 0.05em;">Select Credit Note Line Items</h6>
+
+                <div class="table-responsive mb-4">
+                    <table class="table align-middle border">
+                        <thead class="bg-light">
+                            <tr class="text-muted small">
+                                <th>Item Name</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Purchased Qty</th>
+                                <th class="text-end" style="width: 140px;">Credit Qty</th>
+                                <th class="text-center" style="width: 150px;">Return Stock?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .order.OrderItems}}
+                            <tr>
+                                <td><span class="fw-semibold">{{.Name}}</span></td>
+                                <td class="text-end">฿{{formatMoney .Price}}</td>
+                                <td class="text-end">{{.Quantity}}</td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm text-end cn-qty-input"
+                                        data-order-item-id="{{.ID}}" min="0" max="{{.Quantity}}" value="0">
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input return-stock-input" type="checkbox"
+                                            data-order-item-id="{{.ID}}" checked>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="/orders/{{.order.ID}}" class="btn btn-light">Cancel</a>
+                    <button type="submit" class="btn btn-warning px-4" id="submitBtn">
+                        <i class="bi bi-file-earmark-check me-1"></i>Generate Credit Note
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitCreditNote(e) {
+        e.preventDefault();
+
+        const reason = document.getElementById("reason").value;
+        const qtyInputs = document.querySelectorAll(".cn-qty-input");
+        const stockInputs = document.querySelectorAll(".return-stock-input");
+
+        const stockMap = {};
+        stockInputs.forEach(input => {
+            stockMap[input.getAttribute("data-order-item-id")] = input.checked;
+        });
+
+        const items = [];
+        qtyInputs.forEach(input => {
+            const qty = parseInt(input.value) || 0;
+            const itemId = parseInt(input.getAttribute("data-order-item-id"));
+            if (qty > 0) {
+                items.push({
+                    order_item_id: itemId,
+                    quantity: qty,
+                    return_to_stock: !!stockMap[itemId]
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert("Please select at least 1 item quantity for Credit Note.");
+            return;
+        }
+
+        document.getElementById("submitBtn").disabled = true;
+
+        fetch("/orders/{{.order.ID}}/credit_note", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                reason: reason,
+                items: items
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.credit_note_id) {
+                    alert("Credit Note " + data.code + " issued successfully!");
+                    window.location.href = "/credit_notes/" + data.credit_note_id;
+                } else if (data.error) {
+                    alert("Error: " + data.error);
+                    document.getElementById("submitBtn").disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to submit Credit Note.");
+                document.getElementById("submitBtn").disabled = false;
+            });
+    }
+</script>
+{{end}}

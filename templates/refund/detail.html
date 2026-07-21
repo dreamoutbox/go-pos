@@ -1,0 +1,99 @@
+{{define "content"}}
+<div class="row g-4 justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1 text-danger"><i class="bi bi-arrow-return-left me-2"></i>Refund
+                        {{.refund.Code}}</h4>
+                    <span class="small text-muted">Issued on {{formatDate .refund.CreatedAt}}</span>
+                </div>
+                <div>
+                    <a href="/refunds" class="btn btn-outline-secondary btn-sm me-1">Back to Refunds</a>
+                    <a href="/orders/{{.refund.OrderID}}" class="btn btn-outline-primary btn-sm">View Order</a>
+                </div>
+            </div>
+
+            <!-- Metadata Info -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4">
+                    <div class="bg-light p-3 rounded">
+                        <div class="small text-muted text-uppercase">Order Reference</div>
+                        <div class="fw-semibold"><a href="/orders/{{.refund.OrderID}}" class="text-decoration-none">{{if
+                                .refund.Order.Code}}{{.refund.Order.Code}}{{else}}#{{.refund.OrderID}}{{end}}</a></div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="bg-light p-3 rounded">
+                        <div class="small text-muted text-uppercase">Issued By</div>
+                        <div class="fw-semibold">{{.refund.User.Name}}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="bg-light p-3 rounded">
+                        <div class="small text-muted text-uppercase">Reason / Note</div>
+                        <div class="fw-semibold text-secondary">{{if .refund.Reason}}{{.refund.Reason}}{{else}}No reason
+                            specified{{end}}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refund Items Table -->
+            <h6 class="fw-bold mb-3 text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                Refunded Items List</h6>
+            <div class="table-responsive mb-4">
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Product Name</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Refunded Qty</th>
+                            <th class="text-center">Restocked</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .refund.RefundItems}}
+                        <tr>
+                            <td><span class="fw-semibold">{{.Name}}</span></td>
+                            <td class="text-end">฿{{formatMoney .Price}}</td>
+                            <td class="text-end fw-semibold text-danger">{{.Quantity}}</td>
+                            <td class="text-center">
+                                {{if .ReturnToStock}}
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle px-2">Yes</span>
+                                {{else}}
+                                <span
+                                    class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">No</span>
+                                {{end}}
+                            </td>
+                            <td class="text-end fw-semibold">฿{{formatMoney .Subtotal}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals -->
+            <div class="row justify-content-end">
+                <div class="col-12 col-md-5">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Refund Subtotal</span>
+                        <span class="fw-semibold">฿{{formatMoney .refund.Subtotal}}</span>
+                    </div>
+                    {{if .shop.TaxEnabled}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Refund VAT ({{.shop.TaxRate}}%)</span>
+                        <span class="fw-semibold text-danger">฿{{formatMoney .refund.TaxAmount}}</span>
+                    </div>
+                    {{end}}
+                    <div class="d-flex justify-content-between mb-2 border-top pt-2">
+                        <span class="fw-bold">Total Refund Amount</span>
+                        <span class="fw-bold fs-5 text-danger">฿{{formatMoney .refund.Total}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

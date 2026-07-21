@@ -1,0 +1,49 @@
+{{define "content"}}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-minus me-2 text-warning"></i>Credit Notes (CDN) History</h4>
+            <p class="text-muted small mb-0">Record of tax credit notes issued for price/tax reductions.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr class="text-muted small">
+                    <th>Credit Note Code</th>
+                    <th>Order Ref</th>
+                    <th>Date / Time</th>
+                    <th>Staff</th>
+                    <th>Reason</th>
+                    <th class="text-end">Credit Amount</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .creditNotes}}
+                <tr>
+                    <td><span class="fw-bold text-warning">{{.Code}}</span></td>
+                    <td><a href="/orders/{{.OrderID}}" class="fw-semibold text-decoration-none">{{if .Order.Code}}{{.Order.Code}}{{else}}#{{.OrderID}}{{end}}</a></td>
+                    <td class="small text-muted">{{formatDate .CreatedAt}}</td>
+                    <td>{{.User.Name}}</td>
+                    <td class="small text-secondary">{{if .Reason}}{{.Reason}}{{else}}-{{end}}</td>
+                    <td class="text-end fw-bold text-warning">฿{{formatMoney .Total}}</td>
+                    <td class="text-end">
+                        <a href="/credit_notes/{{.ID}}" class="btn btn-outline-secondary btn-sm me-1"><i class="bi bi-eye me-1"></i>View</a>
+                        <a href="/credit_notes/{{.ID}}/print" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer me-1"></i>Print</a>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-file-earmark-minus fs-1 mb-2 d-block text-secondary"></i>
+                        No credit notes issued yet.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

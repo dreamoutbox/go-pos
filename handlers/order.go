@@ -8,6 +8,7 @@ import (
 
 	"github.com/dreamoutbox/go-pos/config"
 	"github.com/dreamoutbox/go-pos/models"
+	"github.com/dreamoutbox/go-pos/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -160,7 +161,15 @@ func CreateOrder(c *gin.Context) {
 		taxAmount = 0.0
 	}
 
+	orderCode, err := utils.GenerateDocumentCode(tx, shopID, "ORD", time.Now())
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate order running number"})
+		return
+	}
+
 	order := models.Order{
+		Code:       orderCode,
 		ShopID:     shopID,
 		UserID:     userID,
 		Status:     "pending",
@@ -205,10 +214,22 @@ func ShowOrder(c *gin.Context) {
 		return
 	}
 
+	var refunds []models.Refund
+	config.DB.Where("order_id = ?", order.ID).Preload("User").Find(&refunds)
+
+	var creditNotes []models.CreditNote
+	config.DB.Where("order_id = ?", order.ID).Preload("User").Find(&creditNotes)
+
+	var debitNotes []models.DebitNote
+	config.DB.Where("order_id = ?", order.ID).Preload("User").Find(&debitNotes)
+
 	c.HTML(http.StatusOK, "order/detail.html", gin.H{
-		"order": order,
-		"user":  c.MustGet("user"),
-		"shop":  c.MustGet("shop"),
+		"order":       order,
+		"refunds":     refunds,
+		"creditNotes": creditNotes,
+		"debitNotes":  debitNotes,
+		"user":        c.MustGet("user"),
+		"shop":        c.MustGet("shop"),
 	})
 }
 

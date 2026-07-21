@@ -140,6 +140,22 @@
         </div>
     </div>
 
+    <!-- Adjustments Summary Grid -->
+    <div class="stats-grid" style="flex-wrap: wrap; margin-bottom: 30px;">
+        <div class="stat-card" style="border-color: #fca5a5; background-color: #fef2f2;">
+            <span class="label" style="color: #dc2626;">Total Refunds (RFD)</span>
+            <span class="value" style="color: #dc2626;">฿{{formatMoney .summary.TotalRefunds}}</span>
+        </div>
+        <div class="stat-card" style="border-color: #fde68a; background-color: #fffbeb;">
+            <span class="label" style="color: #d97706;">Total Credit Notes (CDN)</span>
+            <span class="value" style="color: #d97706;">฿{{formatMoney .summary.TotalCreditNotes}}</span>
+        </div>
+        <div class="stat-card" style="border-color: #bae6fd; background-color: #f0f9ff;">
+            <span class="label" style="color: #0284c7;">Total Debit Notes (DBN)</span>
+            <span class="value" style="color: #0284c7;">฿{{formatMoney .summary.TotalDebitNotes}}</span>
+        </div>
+    </div>
+
     <!-- Top Selling Products Table -->
     <div class="section-title">Top Selling Products</div>
     <table>

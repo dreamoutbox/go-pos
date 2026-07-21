@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt - #{{.order.ID}}</title>
+    <title>Receipt - {{if .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -84,7 +84,7 @@
         <!-- Receipt Info -->
         <div>
             <div>Date: {{formatDate .order.CreatedAt}}</div>
-            <div>Order Ref: #{{.order.ID}}</div>
+            <div>Order Ref: {{if .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</div>
             <div>Cashier: {{.order.User.Name}}</div>
             <div>Status: {{.order.Status}}</div>
         </div>

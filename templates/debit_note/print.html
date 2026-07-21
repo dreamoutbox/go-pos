@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debit Note - {{.debitNote.Code}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #333;
+            background-color: #fff;
+            padding: 30px;
+            margin: 0;
+        }
+        .header-table, .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .header-table td {
+            vertical-align: top;
+        }
+        .doc-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0284c7;
+            text-transform: uppercase;
+        }
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table-items th {
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .table-items td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .no-print-btn {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto 30px auto;
+            width: fit-content;
+        }
+        @media print {
+            .no-print-btn {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="no-print-btn" onclick="window.print()">Print Debit Note</button>
+
+    <table class="header-table">
+        <tr>
+            <td style="width: 60%;">
+                <h2 style="margin: 0 0 5px 0; color: #1e293b;">{{.shop.Name}}</h2>
+                {{if .shop.TaxName}}<div class="bold">{{.shop.TaxName}}</div>{{end}}
+                {{if .shop.TaxAddress}}<div>{{.shop.TaxAddress}}</div>{{end}}
+                {{if .shop.TaxID}}<div>Tax ID: {{.shop.TaxID}}</div>{{end}}
+                {{if .shop.Phone}}<div>Tel: {{.shop.Phone}}</div>{{end}}
+            </td>
+            <td class="text-right">
+                <div class="doc-title">DEBIT NOTE</div>
+                <div class="bold" style="font-size: 15px; margin-top: 5px;">{{.debitNote.Code}}</div>
+                <div style="color: #64748b; font-size: 12px; margin-top: 5px;">Date: {{formatDate .debitNote.CreatedAt}}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 50%;"><strong>Original Order Reference:</strong> {{if .debitNote.Order.Code}}{{.debitNote.Order.Code}}{{else}}#{{.debitNote.OrderID}}{{end}}</td>
+                <td><strong>Issued By:</strong> {{.debitNote.User.Name}}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding-top: 5px;"><strong>Reason for Debit Charge:</strong> {{if .debitNote.Reason}}{{.debitNote.Reason}}{{else}}N/A{{end}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="table-items">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Amount (฿)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .debitNote.DebitNoteItems}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td class="text-right">฿{{formatMoney .Price}}</td>
+                <td class="text-right">{{.Quantity}}</td>
+                <td class="text-right">฿{{formatMoney .Subtotal}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <table style="width: 300px; margin-left: auto;">
+        <tr>
+            <td class="text-right" style="padding: 4px 0;">Subtotal (Excl. Tax):</td>
+            <td class="text-right bold" style="padding: 4px 0;">฿{{formatMoney .debitNote.Subtotal}}</td>
+        </tr>
+        {{if .shop.TaxEnabled}}
+        <tr>
+            <td class="text-right" style="padding: 4px 0;">VAT ({{.shop.TaxRate}}%):</td>
+            <td class="text-right bold" style="padding: 4px 0; color: #ef4444;">฿{{formatMoney .debitNote.TaxAmount}}</td>
+        </tr>
+        {{end}}
+        <tr style="border-top: 2px solid #333;">
+            <td class="text-right bold" style="font-size: 15px; padding: 8px 0;">TOTAL DEBIT:</td>
+            <td class="text-right bold" style="font-size: 15px; padding: 8px 0; color: #0284c7;">฿{{formatMoney .debitNote.Total}}</td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 60px; text-align: center; color: #94a3b8; font-size: 11px;">
+        This document is an official Debit Note issued by {{.shop.Name}}.
+    </div>
+</body>
+</html>

@@ -20,13 +20,17 @@
             <tbody>
                 {{range .orders}}
                 <tr>
-                    <td><span class="fw-bold">#{{.ID}}</span></td>
+                    <td><span class="fw-bold text-primary">{{if .Code}}{{.Code}}{{else}}#{{.ID}}{{end}}</span></td>
                     <td class="small text-muted">{{formatDate .CreatedAt}}</td>
                     <td>{{.User.Name}}</td>
                     <td class="text-end fw-semibold text-primary">฿{{formatMoney .Total}}</td>
                     <td>
                         {{if eq .Status "paid"}}
                         <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Paid</span>
+                        {{else if eq .Status "partially_refunded"}}
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-2 py-1">Partial Refund</span>
+                        {{else if eq .Status "refunded"}}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-2 py-1">Refunded</span>
                         {{else}}
                         <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Pending</span>
                         {{end}}
