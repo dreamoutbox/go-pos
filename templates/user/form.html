@@ -39,6 +39,17 @@
         </div>
         {{end}}
 
+        {{if eq $.user.Role "superuser"}}
+        <div class="mb-3">
+            <label for="shop_id" class="form-label small fw-semibold text-muted">Assigned Shop</label>
+            <select class="form-select" id="shop_id" name="shop_id">
+                {{range .shops}}
+                <option value="{{.ID}}" {{if $.isEdit}}{{if eq $.targetUser.ShopID .ID}}selected{{end}}{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        {{end}}
+
         <div class="mb-4">
             <label for="role" class="form-label small fw-semibold text-muted">Access Role</label>
             <select class="form-select" id="role" name="role" required>

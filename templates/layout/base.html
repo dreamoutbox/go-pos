@@ -47,6 +47,13 @@
                 <a href="/reports"
                     class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
                         class="bi me-2 bi-graph-up"></i>Reports & Analytics</a>
+                <!-- DEPRECATED use Shop Settings view -->
+                <!-- <a href="/tax/settings"
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-percent"></i>VAT Settings</a> -->
+                <a href="/shop/settings"
+                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
+                        class="bi me-2 bi-gear"></i>Shop Settings</a>
 
                 {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
                 <hr class="sidebar-divider my-2 border-white-10">
@@ -57,16 +64,9 @@
                     class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
                         class="bi me-2 bi-shop"></i>Shops</a>
                 {{end}}
-
                 <a href="/users"
                     class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
                         class="bi me-2 bi-people"></i>Users</a>
-                <a href="/tax/settings"
-                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
-                        class="bi me-2 bi-percent"></i>VAT Settings</a>
-                <a href="/shop/settings"
-                    class="list-group-item list-group-item-action py-2 px-1 bg-transparent border-0 text-white-50"><i
-                        class="bi me-2 bi-gear"></i>Shop Settings</a>
                 {{end}}
 
             </div>
@@ -112,7 +112,22 @@
                 </div>
             </nav>
 
-            <div class="container-fluid py-4 px-4 main-content">
+            {{if and (eq .user.Role "superuser") (ne .user.ShopID .shop.ID) (not .hideViewingBanner)}}
+            <div class="alert alert-warning d-flex align-items-center justify-content-between py-2 px-4 rounded-0 border-0 border-bottom"
+                role="alert" style="background:#fef9c3;">
+                <div><i class="bi bi-eye me-2 text-warning"></i>
+                    <strong>Viewing as:</strong> {{.shop.Name}}
+                    <span class="text-muted ms-2 small">(Your own shop: {{.user.Shop.Name}})</span>
+                </div>
+                <form action="/shops/{{.user.ShopID}}/switch" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="bi bi-arrow-left-circle me-1"></i>Switch Back
+                    </button>
+                </form>
+            </div>
+            {{end}}
+
+            <div class="container-fluid py-2 px-3 main-content">
                 {{template "content" .}}
             </div>
         </div>

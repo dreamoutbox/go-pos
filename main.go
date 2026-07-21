@@ -73,6 +73,16 @@ func loadTemplates() CustomRender {
 			}
 			return s[start:end]
 		},
+		"not": func(v interface{}) bool {
+			if v == nil {
+				return true
+			}
+			switch b := v.(type) {
+			case bool:
+				return !b
+			}
+			return false
+		},
 	}
 
 	standalones := map[string]bool{
@@ -243,6 +253,7 @@ func main() {
 			superAdmin.POST("/shops", handlers.CreateShop)
 			superAdmin.GET("/shops/:id/edit", handlers.EditShopForm)
 			superAdmin.PATCH("/shops/:id", handlers.UpdateShop)
+			superAdmin.POST("/shops/:id/switch", handlers.SwitchShop)
 		}
 	}
 

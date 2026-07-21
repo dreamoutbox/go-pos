@@ -86,9 +86,5 @@ func UpdateTaxSettings(c *gin.Context) {
 	// Update shop context for current request template rendering
 	c.Set("shop", shop)
 
-	c.HTML(http.StatusOK, "tax/settings.html", gin.H{
-		"message": "Tax settings updated successfully.",
-		"user":    c.MustGet("user"),
-		"shop":    shop,
-	})
+	c.Redirect(http.StatusSeeOther, "/shop/settings?taxMsg=VAT+settings+updated+successfully")
 }

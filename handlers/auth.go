@@ -111,3 +111,20 @@ func Logout(c *gin.Context) {
 	)
 	c.Redirect(http.StatusSeeOther, "/login")
 }
+
+// issueJWT creates and signs a JWT for the given user context.
+// shopID can differ from the user's own ShopID to allow superuser shop switching.
+func issueJWT(userID, shopID uint, role, name string) (string, error) {
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	claims := &middleware.Claims{
+		UserID:   userID,
+		ShopID:   shopID,
+		Role:     role,
+		UserName: name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(config.AppConfig.JWTSecret)
+}

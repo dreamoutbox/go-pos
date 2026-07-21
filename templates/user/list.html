@@ -18,6 +18,7 @@
                 <tr class="text-muted small">
                     <th>Name</th>
                     <th>Email</th>
+                    {{if eq $.user.Role "superuser"}}<th>Shop</th>{{end}}
                     <th>Role</th>
                     <th>Created</th>
                     <th class="text-end">Actions</th>
@@ -33,11 +34,16 @@
                         </div>
                     </td>
                     <td>{{.Email}}</td>
+                    {{if eq $.user.Role "superuser"}}
+                    <td><span class="small text-muted">{{if .Shop.Name}}{{.Shop.Name}}{{else}}—{{end}}</span></td>
+                    {{end}}
                     <td>
-                        {{if eq .Role "admin"}}
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1">Admin</span>
+                        {{if eq .Role "superuser"}}
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1">Superuser</span>
+                        {{else if eq .Role "shop_owner"}}
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">Shop Owner</span>
                         {{else}}
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1">Staff</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1">Cashier</span>
                         {{end}}
                     </td>
                     <td class="small text-muted">{{formatDate .CreatedAt}}</td>

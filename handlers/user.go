@@ -20,9 +20,10 @@ type CreateUserInput struct {
 }
 
 type UpdateUserInput struct {
-	Name  string `form:"name" json:"name" validate:"required,min=2"`
-	Email string `form:"email" json:"email" validate:"required,email"`
-	Role  string `form:"role" json:"role" validate:"required,oneof=shop_owner cashier"`
+	Name   string `form:"name" json:"name" validate:"required,min=2"`
+	Email  string `form:"email" json:"email" validate:"required,email"`
+	Role   string `form:"role" json:"role" validate:"required,oneof=shop_owner cashier"`
+	ShopID uint   `form:"shop_id" json:"shop_id"`
 }
 
 type ChangePasswordInput struct {
@@ -53,16 +54,23 @@ func ListUsers(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "user/list.html", gin.H{
-		"users": users,
-		"shops": shops,
-		"user":  c.MustGet("user"),
-		"shop":  c.MustGet("shop"),
+		"users":             users,
+		"shops":             shops,
+		"hideViewingBanner": true,
+		"user":              c.MustGet("user"),
+		"shop":              c.MustGet("shop"),
 	})
 }
 
 func NewUserForm(c *gin.Context) {
+	role := c.MustGet("role").(string)
+	var shops []models.Shop
+	if role == "superuser" {
+		config.DB.Find(&shops)
+	}
 	c.HTML(http.StatusOK, "user/form.html", gin.H{
 		"isEdit": false,
+		"shops":  shops,
 		"user":   c.MustGet("user"),
 		"shop":   c.MustGet("shop"),
 	})
@@ -107,8 +115,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Determine which shop to assign
+	assignedShopID := shopID
+	if c.MustGet("role").(string) == "superuser" && input.ShopID > 0 {
+		assignedShopID = input.ShopID
+	}
+
 	newUser := models.User{
-		ShopID: shopID,
+		ShopID: assignedShopID,
 		Name:   input.Name,
 		Email:  input.Email,
 		Role:   input.Role,
@@ -139,6 +153,7 @@ func CreateUser(c *gin.Context) {
 }
 
 func EditUserForm(c *gin.Context) {
+	role := c.MustGet("role").(string)
 	shopID := c.MustGet("shopID").(uint)
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -148,20 +163,33 @@ func EditUserForm(c *gin.Context) {
 	}
 
 	var targetUser models.User
-	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&targetUser).Error; err != nil {
+	var dbErr error
+	if role == "superuser" {
+		dbErr = config.DB.First(&targetUser, id).Error
+	} else {
+		dbErr = config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&targetUser).Error
+	}
+	if dbErr != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "User not found"})
 		return
+	}
+
+	var shops []models.Shop
+	if role == "superuser" {
+		config.DB.Find(&shops)
 	}
 
 	c.HTML(http.StatusOK, "user/form.html", gin.H{
 		"isEdit":     true,
 		"targetUser": targetUser,
+		"shops":      shops,
 		"user":       c.MustGet("user"),
 		"shop":       c.MustGet("shop"),
 	})
 }
 
 func UpdateUser(c *gin.Context) {
+	role := c.MustGet("role").(string)
 	shopID := c.MustGet("shopID").(uint)
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -171,9 +199,21 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	var targetUser models.User
-	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&targetUser).Error; err != nil {
+	var dbErr error
+	if role == "superuser" {
+		dbErr = config.DB.First(&targetUser, id).Error
+	} else {
+		dbErr = config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&targetUser).Error
+	}
+	if dbErr != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "User not found"})
 		return
+	}
+
+	// Load shops for re-render on error
+	var shops []models.Shop
+	if role == "superuser" {
+		config.DB.Find(&shops)
 	}
 
 	var input UpdateUserInput
@@ -182,6 +222,7 @@ func UpdateUser(c *gin.Context) {
 			"error":      "Invalid form input",
 			"isEdit":     true,
 			"targetUser": targetUser,
+			"shops":      shops,
 			"user":       c.MustGet("user"),
 			"shop":       c.MustGet("shop"),
 		})
@@ -195,6 +236,7 @@ func UpdateUser(c *gin.Context) {
 			"input":      input,
 			"isEdit":     true,
 			"targetUser": targetUser,
+			"shops":      shops,
 			"user":       c.MustGet("user"),
 			"shop":       c.MustGet("shop"),
 		})
@@ -205,6 +247,9 @@ func UpdateUser(c *gin.Context) {
 	targetUser.Name = input.Name
 	targetUser.Email = input.Email
 	targetUser.Role = input.Role
+	if role == "superuser" && input.ShopID > 0 {
+		targetUser.ShopID = input.ShopID
+	}
 
 	if err := config.DB.Save(&targetUser).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "user/form.html", gin.H{
@@ -212,6 +257,7 @@ func UpdateUser(c *gin.Context) {
 			"input":      input,
 			"isEdit":     true,
 			"targetUser": targetUser,
+			"shops":      shops,
 			"user":       c.MustGet("user"),
 			"shop":       c.MustGet("shop"),
 		})

@@ -46,14 +46,21 @@ func AuthRequired() gin.HandlerFunc {
 		c.Set("role", claims.Role)
 		c.Set("userName", claims.UserName)
 
-		// Fetch and inject User & Shop into context for easy access
+		// Fetch and inject User into context (always by real user ID)
 		var user models.User
 		if err := config.DB.Preload("Shop").First(&user, claims.UserID).Error; err != nil {
 			respondUnauthorized(c)
 			return
 		}
 		c.Set("user", user)
-		c.Set("shop", user.Shop)
+
+		// Fetch active shop by claims.ShopID — may differ from user.ShopID when superuser switches
+		var activeShop models.Shop
+		if err := config.DB.First(&activeShop, claims.ShopID).Error; err != nil {
+			respondUnauthorized(c)
+			return
+		}
+		c.Set("shop", activeShop)
 
 		c.Next()
 	}

@@ -1,58 +1,135 @@
 {{define "content"}}
-<div class="container-fluid py-4 px-4 main-content">
-    <div class="card p-4" style="max-width: 600px; margin: 0 auto;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold mb-1"><i class="bi bi-gear me-2 text-primary"></i>Shop Settings</h4>
-                <p class="text-muted small mb-0">Update your shop's public information.</p>
-            </div>
-        </div>
+<div class="row justify-content-center">
+<div class="col-lg-7 col-xl-6">
 
-        {{if .msg}}
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-check-circle me-2"></i>{{.msg}}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {{end}}
-
-        {{if .error}}
-        <div class="alert alert-danger mb-4">
-            <i class="bi bi-exclamation-triangle me-2"></i>{{.error}}
-        </div>
-        {{end}}
-
-        <form action="/shop/settings" method="POST">
-            <input type="hidden" name="_method" value="PATCH">
-
-            <div class="mb-3">
-                <label for="name" class="form-label small fw-semibold text-muted">Shop / Outlet Name <span
-                        class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name"
-                    value="{{if .input}}{{.input.Name}}{{else}}{{.targetShop.Name}}{{end}}" required>
-                {{if .errors.Name}}
-                <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{.errors.Name}}
-                </div>
-                {{end}}
-            </div>
-
-            <div class="mb-3">
-                <label for="phone" class="form-label small fw-semibold text-muted">Phone Number</label>
-                <input type="text" class="form-control" id="phone" name="phone"
-                    value="{{if .input}}{{.input.Phone}}{{else}}{{.targetShop.Phone}}{{end}}">
-            </div>
-
-            <div class="mb-4">
-                <label for="address" class="form-label small fw-semibold text-muted">Address</label>
-                <textarea class="form-control" id="address" name="address"
-                    rows="3">{{if .input}}{{.input.Address}}{{else}}{{.targetShop.Address}}{{end}}</textarea>
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-save me-2"></i>Save Changes
-                </button>
-            </div>
-        </form>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    {{if .backURL}}
+    <a href="{{.backURL}}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Shops</a>
+    {{end}}
 </div>
+
+{{if .msg}}
+<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <i class="bi bi-check-circle me-2"></i>{{.msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{{end}}
+
+<!-- Shop Info Card -->
+<div class="card p-4 mb-4">
+    <div class="mb-3">
+        <h4 class="fw-bold mb-1"><i class="bi bi-gear me-2 text-primary"></i>
+            {{if .pageTitle}}{{.pageTitle}}{{else}}Shop Settings{{end}}</h4>
+        <p class="text-muted small mb-0">Update shop information and VAT configuration.</p>
+    </div>
+
+    <h6 class="fw-bold mb-3 text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+        <i class="bi bi-shop me-1"></i> Shop Information
+    </h6>
+
+    {{if .error}}
+    <div class="alert alert-danger mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{.error}}
+    </div>
+    {{end}}
+
+    <form action="{{if .formAction}}{{.formAction}}{{else}}/shop/settings{{end}}" method="POST">
+        <input type="hidden" name="_method" value="PATCH">
+
+        <div class="mb-3">
+            <label for="name" class="form-label small fw-semibold text-muted">Shop / Outlet Name <span
+                    class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name"
+                value="{{if .input}}{{.input.Name}}{{else}}{{.targetShop.Name}}{{end}}" required>
+            {{if .errors.Name}}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{.errors.Name}}</div>
+            {{end}}
+        </div>
+
+        <div class="mb-3">
+            <label for="phone" class="form-label small fw-semibold text-muted">Phone Number</label>
+            <input type="text" class="form-control" id="phone" name="phone"
+                value="{{if .input}}{{.input.Phone}}{{else}}{{.targetShop.Phone}}{{end}}">
+        </div>
+
+        <div class="mb-4">
+            <label for="address" class="form-label small fw-semibold text-muted">Address</label>
+            <textarea class="form-control" id="address" name="address"
+                rows="3">{{if .input}}{{.input.Address}}{{else}}{{.targetShop.Address}}{{end}}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save me-2"></i>Save Shop Info
+        </button>
+    </form>
+</div>
+
+<!-- VAT / Tax Configuration Card -->
+<div class="card p-4">
+    <h4 class="fw-bold mb-1">
+        <i class="bi bi-percent me-1"></i> VAT &amp; Tax Configuration
+    </h4>
+    <p class="text-muted small mb-5">Set up VAT compliance for Thailand (7% VAT default).</p>
+
+    {{if .taxError}}
+    <div class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>{{.taxError}}</div>
+    {{end}}
+    {{if .taxMsg}}
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle me-2"></i>{{.taxMsg}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {{end}}
+
+    <form action="/tax/settings" method="POST">
+        <input type="hidden" name="_method" value="PATCH">
+
+        <div class="form-check form-switch mb-3 p-3 bg-light rounded border">
+            <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="tax_enabled" name="tax_enabled"
+                value="true" {{if .targetShop.TaxEnabled}}checked{{end}}>
+            <label class="form-check-label fw-semibold" for="tax_enabled">Enable VAT Calculation</label>
+            <div class="small text-muted mt-1">If enabled, VAT will be calculated on checkouts and displayed on
+                receipts.</div>
+        </div>
+
+        <div class="form-check form-switch mb-4 p-3 bg-light rounded border">
+            <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="tax_included"
+                name="tax_included" value="true" {{if .targetShop.TaxIncluded}}checked{{end}}>
+            <label class="form-check-label fw-semibold" for="tax_included">VAT Included Pricing</label>
+            <div class="small text-muted mt-1">Recommended for Thailand retail. If checked, prices already contain VAT.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="tax_rate" class="form-label small fw-semibold text-muted">VAT Tax Rate (%)</label>
+            <input type="number" step="0.1" class="form-control" id="tax_rate" name="tax_rate"
+                value="{{.targetShop.TaxRate}}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="tax_name" class="form-label small fw-semibold text-muted">Registered Company Name</label>
+            <input type="text" class="form-control" id="tax_name" name="tax_name" value="{{.targetShop.TaxName}}"
+                placeholder="e.g. My Shop Co., Ltd.">
+        </div>
+
+        <div class="mb-3">
+            <label for="tax_id" class="form-label small fw-semibold text-muted">Thailand Tax ID (13 digits)</label>
+            <input type="text" class="form-control" id="tax_id" name="tax_id" value="{{.targetShop.TaxID}}"
+                placeholder="e.g. 0123456789012" maxlength="13">
+        </div>
+
+        <div class="mb-4">
+            <label for="tax_address" class="form-label small fw-semibold text-muted">Registered Tax Address</label>
+            <textarea class="form-control" id="tax_address" name="tax_address" rows="3"
+                placeholder="Shop registered address for invoicing...">{{.targetShop.TaxAddress}}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save me-2"></i>Save VAT Config
+        </button>
+    </form>
+</div>
+
+</div><!-- /col -->
+</div><!-- /row -->
 {{end}}

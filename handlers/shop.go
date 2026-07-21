@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -17,12 +18,12 @@ type ShopFormInput struct {
 }
 
 type CreateShopInput struct {
-	Name           string `form:"name" json:"name" validate:"required"`
-	Address        string `form:"address" json:"address"`
-	Phone          string `form:"phone" json:"phone"`
-	AdminEmail     string `form:"admin_email" json:"admin_email" validate:"required,email"`
-	AdminPassword  string `form:"admin_password" json:"admin_password" validate:"required,min=4"`
-	AdminName      string `form:"admin_name" json:"admin_name" validate:"required,min=2"`
+	Name          string `form:"name" json:"name" validate:"required"`
+	Address       string `form:"address" json:"address"`
+	Phone         string `form:"phone" json:"phone"`
+	AdminEmail    string `form:"admin_email" json:"admin_email" validate:"required,email"`
+	AdminPassword string `form:"admin_password" json:"admin_password" validate:"required,min=4"`
+	AdminName     string `form:"admin_name" json:"admin_name" validate:"required,min=2"`
 }
 
 func ListShops(c *gin.Context) {
@@ -33,9 +34,10 @@ func ListShops(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "shop/list.html", gin.H{
-		"shops": shops,
-		"user":  c.MustGet("user"),
-		"shop":  c.MustGet("shop"),
+		"shops":             shops,
+		"hideViewingBanner": true,
+		"user":              c.MustGet("user"),
+		"shop":              c.MustGet("shop"),
 	})
 }
 
@@ -160,9 +162,11 @@ func EditShopForm(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "shop/form.html", gin.H{
-		"isEdit":     true,
+	c.HTML(http.StatusOK, "shop/settings.html", gin.H{
 		"targetShop": targetShop,
+		"formAction": fmt.Sprintf("/shops/%d", targetShop.ID),
+		"pageTitle":  fmt.Sprintf("Edit: %s", targetShop.Name),
+		"backURL":    "/shops",
 		"user":       c.MustGet("user"),
 		"shop":       c.MustGet("shop"),
 	})
@@ -212,9 +216,11 @@ func UpdateShop(c *gin.Context) {
 	targetShop.Phone = input.Phone
 
 	if err := config.DB.Save(&targetShop).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "shop/form.html", gin.H{
+		c.HTML(http.StatusInternalServerError, "shop/settings.html", gin.H{
 			"error":      "Failed to update shop details: " + err.Error(),
-			"isEdit":     true,
+			"formAction": fmt.Sprintf("/shops/%d", targetShop.ID),
+			"pageTitle":  fmt.Sprintf("Edit: %s", targetShop.Name),
+			"backURL":    "/shops",
 			"targetShop": targetShop,
 			"user":       c.MustGet("user"),
 			"shop":       c.MustGet("shop"),
@@ -225,14 +231,48 @@ func UpdateShop(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/shops")
 }
 
+// SwitchShop lets the superuser switch their active shop context without re-logging in.
+func SwitchShop(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/shops")
+		return
+	}
+
+	var targetShop models.Shop
+	if err := config.DB.First(&targetShop, id).Error; err != nil {
+		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Shop not found"})
+		return
+	}
+
+	user := c.MustGet("user").(models.User)
+
+	// Re-issue JWT with the selected shop ID
+	token, err := issueJWT(user.ID, uint(id), user.Role, user.Name)
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": "Failed to switch shop context"})
+		return
+	}
+
+	c.SetCookie("token", token, 3600*24*7, "/", "", false, true)
+	c.Redirect(http.StatusSeeOther, "/")
+}
+
 // MyShopSettingsForm shows the shop owner a form to edit their own shop's basic info.
 func MyShopSettingsForm(c *gin.Context) {
-	shop := c.MustGet("shop").(models.Shop)
+	shopID := c.MustGet("shopID").(uint)
+	var targetShop models.Shop
+	if err := config.DB.First(&targetShop, shopID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": "Failed to load shop"})
+		return
+	}
 	c.HTML(http.StatusOK, "shop/settings.html", gin.H{
-		"targetShop": shop,
+		"targetShop": targetShop,
 		"msg":        c.Query("msg"),
+		"taxMsg":     c.Query("taxMsg"),
 		"user":       c.MustGet("user"),
-		"shop":       shop,
+		"shop":       targetShop,
 	})
 }
 

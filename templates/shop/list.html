@@ -37,7 +37,12 @@
                         {{end}}
                     </td>
                     <td class="text-end">
-                        <a href="/shops/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Edit Details</a>
+                        <a href="/shops/{{.ID}}/edit" class="btn btn-outline-primary btn-sm me-1"><i class="bi bi-pencil"></i> Edit Details</a>
+                        <form action="/shops/{{.ID}}/switch" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" title="View this shop as active">
+                                <i class="bi bi-eye"></i> View As
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {{else}}
