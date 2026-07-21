@@ -207,7 +207,7 @@ func ShowOrder(c *gin.Context) {
 
 	var order models.Order
 	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).
-		Preload("OrderItems.Product").
+		Preload("OrderItems.Product", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		Preload("User").
 		First(&order).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Order not found"})

@@ -56,7 +56,7 @@ func NewRefundForm(c *gin.Context) {
 
 	var order models.Order
 	if err := config.DB.Where("id = ? AND shop_id = ?", orderID, shopID).
-		Preload("OrderItems.Product").
+		Preload("OrderItems.Product", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		First(&order).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Order not found"})
 		return
@@ -311,7 +311,7 @@ func ShowRefund(c *gin.Context) {
 		Preload("Order").
 		Preload("User").
 		Preload("Shop").
-		Preload("RefundItems.Product").
+		Preload("RefundItems.Product", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		Preload("RefundItems.OrderItem").
 		First(&refund).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Refund record not found"})

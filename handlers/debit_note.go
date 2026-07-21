@@ -65,7 +65,7 @@ func NewDebitNoteForm(c *gin.Context) {
 	}
 
 	var products []models.Product
-	config.DB.Where("shop_id = ?", shopID).Find(&products)
+	config.DB.Unscoped().Where("shop_id = ?", shopID).Find(&products)
 
 	c.HTML(http.StatusOK, "debit_note/form.html", gin.H{
 		"order":    order,
@@ -254,7 +254,7 @@ func ShowDebitNote(c *gin.Context) {
 		Preload("Order").
 		Preload("User").
 		Preload("Shop").
-		Preload("DebitNoteItems.Product").
+		Preload("DebitNoteItems.Product", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		First(&debitNote).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Debit Note record not found"})
 		return
@@ -281,7 +281,7 @@ func PrintDebitNote(c *gin.Context) {
 		Preload("Order").
 		Preload("User").
 		Preload("Shop").
-		Preload("DebitNoteItems.Product").
+		Preload("DebitNoteItems.Product", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		First(&debitNote).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Debit Note record not found"})
 		return

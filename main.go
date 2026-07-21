@@ -148,9 +148,11 @@ func loadTemplates() CustomRender {
 		}
 		return nil
 	})
+
 	if err != nil {
 		panic(err)
 	}
+
 	return r
 }
 
