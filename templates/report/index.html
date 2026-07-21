@@ -12,26 +12,38 @@
 </div>
 
 <!-- Summaries Cards Grid -->
-<div class="row g-4 mb-4">
-    <div class="col-6 col-md-3">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl">
         <div class="card p-3 text-center h-100">
             <span class="text-muted small fw-semibold text-uppercase">Total Orders</span>
             <h3 class="fw-bold mt-1 text-dark" id="summaryOrders">0</h3>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="card p-3 text-center h-100">
             <span class="text-muted small fw-semibold text-uppercase">Total Items Sold</span>
             <h3 class="fw-bold mt-1 text-dark" id="summaryItems">0</h3>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="card p-3 text-center h-100">
-            <span class="text-muted small fw-semibold text-uppercase">Sales Revenue</span>
-            <h3 class="fw-bold mt-1 text-primary" id="summaryRevenue">฿0.00</h3>
+            <span class="text-muted small fw-semibold text-uppercase">Gross Sales (Incl. VAT)</span>
+            <h3 class="fw-bold mt-1 text-primary" id="summaryGross">฿0.00</h3>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Net Sales (Excl. VAT)</span>
+            <h3 class="fw-bold mt-1 text-info" id="summaryNet">฿0.00</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card p-3 text-center h-100">
+            <span class="text-muted small fw-semibold text-uppercase">Net VAT Payable</span>
+            <h3 class="fw-bold mt-1 text-warning" id="summaryVAT">฿0.00</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
         <div class="card p-3 text-center h-100">
             <span class="text-muted small fw-semibold text-uppercase">Net Profit</span>
             <h3 class="fw-bold mt-1 text-success" id="summaryProfit">฿0.00</h3>
@@ -112,7 +124,9 @@ function fetchReportData() {
 function updateSummaries(summary) {
     document.getElementById("summaryOrders").innerText = summary.orders || 0;
     document.getElementById("summaryItems").innerText = summary.items_sold || 0;
-    document.getElementById("summaryRevenue").innerText = "฿" + (summary.revenue || 0).toFixed(2);
+    document.getElementById("summaryGross").innerText = "฿" + (summary.gross_sales || 0).toFixed(2);
+    document.getElementById("summaryNet").innerText = "฿" + (summary.net_sales || 0).toFixed(2);
+    document.getElementById("summaryVAT").innerText = "฿" + (summary.vat_payable || 0).toFixed(2);
     document.getElementById("summaryProfit").innerText = "฿" + (summary.profit || 0).toFixed(2);
 }
 

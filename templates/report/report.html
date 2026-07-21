@@ -113,7 +113,7 @@
     </div>
 
     <!-- Summary Metrics -->
-    <div class="stats-grid">
+    <div class="stats-grid" style="flex-wrap: wrap;">
         <div class="stat-card">
             <span class="label">Total Orders</span>
             <span class="value">{{.summary.Orders}}</span>
@@ -123,8 +123,16 @@
             <span class="value">{{.summary.ItemsSold}}</span>
         </div>
         <div class="stat-card">
-            <span class="label">Sales Revenue</span>
-            <span class="value" style="color: #4f46e5;">฿{{formatMoney .summary.Revenue}}</span>
+            <span class="label">Gross Sales (Incl. VAT)</span>
+            <span class="value" style="color: #4f46e5;">฿{{formatMoney .summary.GrossSales}}</span>
+        </div>
+        <div class="stat-card">
+            <span class="label">Net Sales (Excl. VAT)</span>
+            <span class="value" style="color: #0284c7;">฿{{formatMoney .summary.NetSales}}</span>
+        </div>
+        <div class="stat-card">
+            <span class="label">Net VAT Payable</span>
+            <span class="value" style="color: #d97706;">฿{{formatMoney .summary.VATPayable}}</span>
         </div>
         <div class="stat-card">
             <span class="label">Net Profit</span>

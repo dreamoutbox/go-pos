@@ -22,10 +22,36 @@ type DailyStat struct {
 }
 
 type SummaryStats struct {
-	Revenue   float64 `json:"revenue"`
-	Profit    float64 `json:"profit"`
-	Orders    int64   `json:"orders"`
-	ItemsSold int64   `json:"items_sold"`
+	Revenue    float64 `json:"revenue"`
+	Profit     float64 `json:"profit"`
+	Orders     int64   `json:"orders"`
+	ItemsSold  int64   `json:"items_sold"`
+	GrossSales float64 `json:"gross_sales"` // Total Sales Including VAT
+	NetSales   float64 `json:"net_sales"`   // Total Sales Excluding VAT
+	VATPayable float64 `json:"vat_payable"` // Net VAT Due
+}
+
+// computeVATBreakdown calculates gross/net/VAT from the raw total collected.
+// shop.TaxEnabled=true, shop.TaxIncluded=true  → prices already include VAT (VAT-Inclusive)
+// shop.TaxEnabled=true, shop.TaxIncluded=false → prices exclude VAT (VAT-Exclusive, VAT added on top)
+// shop.TaxEnabled=false → no VAT
+func computeVATBreakdown(total float64, shop models.Shop) (gross, net, vatPayable float64) {
+	if !shop.TaxEnabled || shop.TaxRate <= 0 {
+		return total, total, 0
+	}
+	rate := shop.TaxRate / 100.0
+	if shop.TaxIncluded {
+		// Prices include VAT: Net = Total / (1 + rate), VAT = Total - Net
+		gross = total
+		net = total / (1 + rate)
+		vatPayable = gross - net
+	} else {
+		// Prices exclude VAT: Gross = Total * (1 + rate), VAT = Gross - Total
+		net = total
+		gross = total * (1 + rate)
+		vatPayable = gross - net
+	}
+	return
 }
 
 func ReportDashboard(c *gin.Context) {
@@ -37,6 +63,7 @@ func ReportDashboard(c *gin.Context) {
 
 func ReportDataJSON(c *gin.Context) {
 	shopID := c.MustGet("shopID").(uint)
+	shop := c.MustGet("shop").(models.Shop)
 	dateRange := c.DefaultQuery("range", "today")
 
 	var startDate time.Time
@@ -91,6 +118,9 @@ func ReportDataJSON(c *gin.Context) {
 		dailyMap[dateStr].Profit += orderProfit
 	}
 
+	// VAT breakdown over total revenue
+	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(summary.Revenue, shop)
+
 	// Format daily list
 	var dailyStats []DailyStat
 	tempDate := startDate
@@ -125,11 +155,13 @@ func ReportDataJSON(c *gin.Context) {
 		"daily_stats":  dailyStats,
 		"top_products": topProducts,
 		"low_stock":    lowStock,
+		"shop":         shop,
 	})
 }
 
 func PrintableReport(c *gin.Context) {
 	shopID := c.MustGet("shopID").(uint)
+	shop := c.MustGet("shop").(models.Shop)
 	dateRange := c.DefaultQuery("range", "today")
 
 	var startDate time.Time
@@ -164,6 +196,7 @@ func PrintableReport(c *gin.Context) {
 			summary.Profit += item.Subtotal - (item.Cost * float64(item.Quantity))
 		}
 	}
+	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(summary.Revenue, shop)
 
 	var topProducts []TopProduct
 	config.DB.Table("order_items").
@@ -186,6 +219,7 @@ func PrintableReport(c *gin.Context) {
 		"top_products": topProducts,
 		"low_stock":    lowStock,
 		"user":         c.MustGet("user"),
-		"shop":         c.MustGet("shop"),
+		"shop":         shop,
 	})
 }
+
