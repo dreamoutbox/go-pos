@@ -228,6 +228,8 @@ func main() {
 			shopAdmin.GET("/products/:id/edit", handlers.EditProductForm)
 			shopAdmin.PATCH("/products/:id", handlers.UpdateProduct)
 			shopAdmin.DELETE("/products/:id", handlers.DeleteProduct)
+			shopAdmin.POST("/products/:id/restore", handlers.RestoreProduct)
+			shopAdmin.PATCH("/products/:id/restore", handlers.RestoreProduct)
 
 			// Stock updates & audit history
 			shopAdmin.GET("/stock/:productID/add", handlers.AddStockForm)

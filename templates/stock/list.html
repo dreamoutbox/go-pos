@@ -25,7 +25,7 @@
                     <td class="text-end {{if lt .Stock 10}}text-danger fw-semibold{{end}}">{{.Stock}} items</td>
                     <td class="text-end">
                         <a href="/stock/{{.ID}}/add" class="btn btn-outline-success btn-sm me-1"><i class="bi bi-plus-lg me-1"></i>Add Stock</a>
-                        {{if eq $.user.Role "admin"}}
+                        {{if or (eq $.user.Role "superuser") (eq $.user.Role "shop_owner")}}
                         <button class="btn btn-outline-primary btn-sm" onclick="openEditStockModal('{{.ID}}', '{{.Name}}', '{{.Stock}}')"><i class="bi bi-pencil-square"></i> Set Stock</button>
                         {{end}}
                     </td>
@@ -42,8 +42,8 @@
     </div>
 </div>
 
-<!-- Edit Stock Modal (Admin only) -->
-{{if eq .user.Role "admin"}}
+<!-- Edit Stock Modal -->
+{{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
 <div class="modal fade" id="editStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

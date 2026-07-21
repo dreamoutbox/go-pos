@@ -9,16 +9,29 @@
                 </div>
                 <div>
                     <a href="/products" class="btn btn-outline-secondary btn-sm me-1">Back to Catalog</a>
-                    {{if eq .user.Role "admin"}}
+                    {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
                     <a href="/products/{{.product.ID}}/edit" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
                     {{end}}
                 </div>
             </div>
 
+            {{if .product.DeletedAt.Valid}}
+            <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <i class="bi bi-trash-fill me-2"></i>This product is currently <strong>deleted</strong>.
+                </div>
+                {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
+                <form action="/products/{{.product.ID}}/restore" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-arrow-counterclockwise me-1"></i>Restore Product</button>
+                </form>
+                {{end}}
+            </div>
+            {{end}}
+
             <div class="row g-4">
                 <div class="col-12 col-md-5">
                     {{if .product.ImagePath}}
-                    <img src="{{.product.ImagePath}}" class="product-img-detail" alt="{{.product.Name}}">
+                    <img src="{{.product.ImagePath}}" class="product-img-detail {{if .product.DeletedAt.Valid}}grayscale{{end}}" alt="{{.product.Name}}">
                     {{else}}
                     <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 250px;">
                         <i class="bi bi-image text-muted fs-1"></i>
@@ -31,7 +44,7 @@
                         <h3 class="text-primary fw-bold">฿{{formatMoney .product.Price}}</h3>
                     </div>
                     
-                    {{if eq .user.Role "admin"}}
+                    {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
                     <div class="mb-4">
                         <h6 class="text-muted small fw-semibold text-uppercase">Cost Price</h6>
                         <h5 class="fw-semibold text-dark">฿{{formatMoney .product.Cost}}</h5>
@@ -53,17 +66,19 @@
                 </div>
             </div>
 
-            {{if eq .user.Role "admin"}}
-            <hr class="my-4">
-            <div class="bg-danger bg-opacity-10 border border-danger-subtle rounded p-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <h6 class="text-danger fw-bold mb-1">Danger Zone</h6>
-                    <span class="small text-muted">Deleting this product is permanent and cannot be undone.</span>
+            {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
+                {{if not .product.DeletedAt.Valid}}
+                <hr class="my-4">
+                <div class="bg-danger bg-opacity-10 border border-danger-subtle rounded p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-danger fw-bold mb-1">Danger Zone</h6>
+                        <span class="small text-muted">Soft-deleting this product will archive it and remove it from sales.</span>
+                    </div>
+                    <form id="deleteProductForm" class="m-0">
+                        <button type="button" onclick="confirmDelete()" class="btn btn-danger btn-sm">Delete Product</button>
+                    </form>
                 </div>
-                <form id="deleteProductForm" class="m-0">
-                    <button type="button" onclick="confirmDelete()" class="btn btn-danger btn-sm">Delete Product</button>
-                </form>
-            </div>
+                {{end}}
             {{end}}
         </div>
     </div>

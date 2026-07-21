@@ -22,19 +22,29 @@ type ProductFormInput struct {
 	Description string  `form:"description" json:"description"`
 }
 
+func isJSONRequest(c *gin.Context) bool {
+	return c.GetHeader("Accept") == "application/json" || c.GetHeader("X-Requested-With") == "XMLHttpRequest"
+}
+
 func ListProducts(c *gin.Context) {
 	shopID := c.MustGet("shopID").(uint)
+	showDeleted := c.Query("show_deleted") == "true"
 
 	var products []models.Product
-	if err := config.DB.Where("shop_id = ?", shopID).Find(&products).Error; err != nil {
+	query := config.DB
+	if showDeleted {
+		query = query.Unscoped()
+	}
+	if err := query.Where("shop_id = ?", shopID).Order("id desc").Find(&products).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": err.Error()})
 		return
 	}
 
 	c.HTML(http.StatusOK, "product/list.html", gin.H{
-		"products": products,
-		"user":     c.MustGet("user"),
-		"shop":     c.MustGet("shop"),
+		"products":    products,
+		"showDeleted": showDeleted,
+		"user":        c.MustGet("user"),
+		"shop":        c.MustGet("shop"),
 	})
 }
 
@@ -48,7 +58,7 @@ func ShowProduct(c *gin.Context) {
 	}
 
 	var product models.Product
-	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
+	if err := config.DB.Unscoped().Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Product not found"})
 		return
 	}
@@ -160,7 +170,7 @@ func EditProductForm(c *gin.Context) {
 	}
 
 	var product models.Product
-	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
+	if err := config.DB.Unscoped().Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Product not found"})
 		return
 	}
@@ -168,6 +178,7 @@ func EditProductForm(c *gin.Context) {
 	c.HTML(http.StatusOK, "product/form.html", gin.H{
 		"isEdit":  true,
 		"product": product,
+		"msg":     c.Query("msg"),
 		"user":    c.MustGet("user"),
 		"shop":    c.MustGet("shop"),
 	})
@@ -183,7 +194,7 @@ func UpdateProduct(c *gin.Context) {
 	}
 
 	var product models.Product
-	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
+	if err := config.DB.Unscoped().Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Product not found"})
 		return
 	}
@@ -238,7 +249,7 @@ func UpdateProduct(c *gin.Context) {
 	product.Cost = input.Cost
 	product.Description = input.Description
 
-	if err := config.DB.Save(&product).Error; err != nil {
+	if err := config.DB.Unscoped().Save(&product).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "product/form.html", gin.H{
 			"error":   "Failed to update product: " + err.Error(),
 			"isEdit":  true,
@@ -257,27 +268,77 @@ func DeleteProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		if isJSONRequest(c) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		} else {
+			c.Redirect(http.StatusSeeOther, "/products")
+		}
 		return
 	}
 
 	var product models.Product
 	if err := config.DB.Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		if isJSONRequest(c) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		} else {
+			c.Redirect(http.StatusSeeOther, "/products")
+		}
 		return
 	}
 
-	// Delete image file if exists
-	if product.ImagePath != "" {
-		filename := filepath.Base(product.ImagePath)
-		path := filepath.Join(config.AppConfig.UploadDir, filename)
-		_ = os.Remove(path)
-	}
-
+	// Soft delete product (updates deleted_at column to NOW())
 	if err := config.DB.Delete(&product).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
+		if isJSONRequest(c) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
+		} else {
+			c.Redirect(http.StatusSeeOther, "/products?error=Failed+to+delete+product")
+		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
+	if isJSONRequest(c) {
+		c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
+	} else {
+		c.Redirect(http.StatusSeeOther, "/products?msg=Product+deleted+successfully")
+	}
+}
+
+func RestoreProduct(c *gin.Context) {
+	shopID := c.MustGet("shopID").(uint)
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		if isJSONRequest(c) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		} else {
+			c.Redirect(http.StatusSeeOther, "/products")
+		}
+		return
+	}
+
+	var product models.Product
+	if err := config.DB.Unscoped().Where("id = ? AND shop_id = ?", id, shopID).First(&product).Error; err != nil {
+		if isJSONRequest(c) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		} else {
+			c.Redirect(http.StatusSeeOther, "/products")
+		}
+		return
+	}
+
+	// Restore product by setting deleted_at to NULL
+	if err := config.DB.Unscoped().Model(&product).Update("deleted_at", nil).Error; err != nil {
+		if isJSONRequest(c) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restore product"})
+		} else {
+			c.Redirect(http.StatusSeeOther, fmt.Sprintf("/products/%d/edit?error=Failed+to+restore+product", id))
+		}
+		return
+	}
+
+	if isJSONRequest(c) {
+		c.JSON(http.StatusOK, gin.H{"message": "Product restored successfully"})
+	} else {
+		c.Redirect(http.StatusSeeOther, fmt.Sprintf("/products/%d/edit?msg=Product+restored+successfully", product.ID))
+	}
 }
