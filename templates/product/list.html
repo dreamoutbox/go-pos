@@ -47,7 +47,7 @@
                         {{end}}
                     </td>
                     <td>
-                        <a href="/products/{{.ID}}" class="fw-semibold text-decoration-none {{if .DeletedAt.Valid}}text-muted{{else}}text-dark{{end}}">{{.Name}}</a>
+                        <a href="/products/{{.ID}}/edit" class="fw-semibold text-decoration-none {{if .DeletedAt.Valid}}text-muted{{else}}text-dark{{end}}">{{.Name}}</a>
                         {{if .DeletedAt.Valid}}
                         <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Deleted</span>
                         {{end}}
@@ -57,9 +57,8 @@
                     <td class="text-end fw-semibold {{if .DeletedAt.Valid}}text-muted{{else}}text-primary{{end}}">฿{{formatMoney .Price}}</td>
                     <td class="text-end {{if .DeletedAt.Valid}}text-muted{{else if lt .Stock 10}}text-danger fw-semibold{{end}}">{{.Stock}}</td>
                     <td class="text-end">
-                        <a href="/products/{{.ID}}" class="btn btn-outline-secondary btn-sm me-1"><i class="bi bi-eye"></i> View</a>
                         {{if or (eq $.user.Role "superuser") (eq $.user.Role "shop_owner")}}
-                        <a href="/products/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+                        <a href="/products/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
                         {{end}}
                     </td>
                 </tr>

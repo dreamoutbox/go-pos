@@ -1,6 +1,6 @@
 {{define "content"}}
 <div class="card p-4" style="max-width: 600px; margin: 0 auto;">
-    <h4 class="fw-bold mb-4">{{if .isEdit}}Edit Product Properties{{else}}Create New Product{{end}}</h4>
+    <h4 class="fw-bold mb-4">{{if .isEdit}}Edit Product{{else}}Create New Product{{end}}</h4>
 
     {{if .msg}}
     <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
@@ -14,27 +14,29 @@
     {{end}}
 
     {{if .isEdit}}
-        {{if .product.DeletedAt.Valid}}
-        <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <i class="bi bi-trash-fill me-2"></i>This product is currently <strong>deleted</strong>.
-            </div>
-            <form action="/products/{{.product.ID}}/restore" method="POST" class="m-0">
-                <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-arrow-counterclockwise me-1"></i>Restore Product</button>
-            </form>
+    {{if .product.DeletedAt.Valid}}
+    <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <i class="bi bi-trash-fill me-2"></i>This product is currently <strong>deleted</strong>.
         </div>
-        {{end}}
+        <form action="/products/{{.product.ID}}/restore" method="POST" class="m-0">
+            <button type="submit" class="btn btn-success btn-sm"><i
+                    class="bi bi-arrow-counterclockwise me-1"></i>Restore Product</button>
+        </form>
+    </div>
+    {{end}}
     {{end}}
 
-    <form action="{{if .isEdit}}/products/{{.product.ID}}{{else}}/products{{end}}" method="POST" enctype="multipart/form-data">
+    <form action="{{if .isEdit}}/products/{{.product.ID}}{{else}}/products{{end}}" method="POST"
+        enctype="multipart/form-data">
         {{if .isEdit}}
         <input type="hidden" name="_method" value="PATCH">
         {{end}}
 
         <div class="mb-3">
             <label for="name" class="form-label small fw-semibold text-muted">Product Name</label>
-            <input type="text" class="form-control" id="name" name="name" 
-                   value="{{if .isEdit}}{{.product.Name}}{{else}}{{if .input}}{{.input.Name}}{{end}}{{end}}" required>
+            <input type="text" class="form-control" id="name" name="name"
+                value="{{if .isEdit}}{{.product.Name}}{{else}}{{if .input}}{{.input.Name}}{{end}}{{end}}" required>
             {{if .errors.Name}}
             <div class="text-danger small mt-1">{{.errors.Name}}</div>
             {{end}}
@@ -42,8 +44,8 @@
 
         <div class="mb-3">
             <label for="sku" class="form-label small fw-semibold text-muted">SKU / Barcode</label>
-            <input type="text" class="form-control" id="sku" name="sku" 
-                   value="{{if .isEdit}}{{.product.SKU}}{{else}}{{if .input}}{{.input.SKU}}{{end}}{{end}}">
+            <input type="text" class="form-control" id="sku" name="sku"
+                value="{{if .isEdit}}{{.product.SKU}}{{else}}{{if .input}}{{.input.SKU}}{{end}}{{end}}">
             {{if .errors.SKU}}
             <div class="text-danger small mt-1">{{.errors.SKU}}</div>
             {{end}}
@@ -52,16 +54,18 @@
         <div class="row mb-3">
             <div class="col-6">
                 <label for="cost" class="form-label small fw-semibold text-muted">Cost Price (฿)</label>
-                <input type="number" step="0.01" class="form-control" id="cost" name="cost" 
-                       value="{{if .isEdit}}{{.product.Cost}}{{else}}{{if .input}}{{.input.Cost}}{{else}}0.00{{end}}{{end}}" required>
+                <input type="number" step="0.01" class="form-control" id="cost" name="cost"
+                    value="{{if .isEdit}}{{.product.Cost}}{{else}}{{if .input}}{{.input.Cost}}{{else}}0.00{{end}}{{end}}"
+                    required>
                 {{if .errors.Cost}}
                 <div class="text-danger small mt-1">{{.errors.Cost}}</div>
                 {{end}}
             </div>
             <div class="col-6">
                 <label for="price" class="form-label small fw-semibold text-muted">Selling Price (฿)</label>
-                <input type="number" step="0.01" class="form-control" id="price" name="price" 
-                       value="{{if .isEdit}}{{.product.Price}}{{else}}{{if .input}}{{.input.Price}}{{end}}{{end}}" required>
+                <input type="number" step="0.01" class="form-control" id="price" name="price"
+                    value="{{if .isEdit}}{{.product.Price}}{{else}}{{if .input}}{{.input.Price}}{{end}}{{end}}"
+                    required>
                 {{if .errors.Price}}
                 <div class="text-danger small mt-1">{{.errors.Price}}</div>
                 {{end}}
@@ -70,41 +74,74 @@
 
         <div class="mb-3">
             <label for="description" class="form-label small fw-semibold text-muted">Description</label>
-            <textarea class="form-control" id="description" name="description" rows="3">{{if .isEdit}}{{.product.Description}}{{else}}{{if .input}}{{.input.Description}}{{end}}{{end}}</textarea>
+            <textarea class="form-control" id="description" name="description"
+                rows="3">{{if .isEdit}}{{.product.Description}}{{else}}{{if .input}}{{.input.Description}}{{end}}{{end}}</textarea>
         </div>
 
+
+        {{if .isEdit}}
+        <!-- Product Image Section -->
+        <label class="form-label small fw-semibold text-muted mb-2">Product Image</label>
+        <div class="d-flex flex-column align-items-center mb-3">
+            {{if .product.ImagePath}}
+            <img src="{{.product.ImagePath}}" class="rounded border shadow-sm"
+                style="max-width: 220px; max-height: 180px; object-fit: cover;" alt="{{.product.Name}}">
+            {{else}}
+            <div class="bg-white rounded border d-flex align-items-center justify-content-center"
+                style="width: 140px; height: 140px;">
+                <i class="bi bi-image text-muted fs-1"></i>
+            </div>
+            {{end}}
+        </div>
+        <div>
+            <label for="image" class="form-label small fw-semibold text-muted">Change Product Image</label>
+            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+        </div>
+
+        <!-- Inventory Stock Section -->
+        <label class="form-label small fw-semibold text-muted mb-2 mt-4">Inventory Stock</label>
+        <div class="d-flex align-items-center justify-content-between bg-white border rounded p-3">
+            <div>
+                <span class="small text-muted d-block" style="font-size: 0.75rem;">Current Stock Level</span>
+                <span
+                    class="fw-bold fs-4 {{if lt .product.Stock 10}}text-danger{{else}}text-dark{{end}}">{{.product.Stock}}</span>
+                <span class="small text-muted ms-1">units</span>
+            </div>
+            <a href="/stock/{{.product.ID}}/add" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Restock Product
+            </a>
+        </div>
+        {{else}}
         <div class="mb-4">
             <label for="image" class="form-label small fw-semibold text-muted">Product Image</label>
             <input type="file" class="form-control" id="image" name="image" accept="image/*">
-            {{if .isEdit}}
-                {{if .product.ImagePath}}
-                <div class="mt-2 small text-muted">
-                    Current Image: <a href="{{.product.ImagePath}}" target="_blank" class="text-decoration-none">View current image</a>
-                </div>
-                {{end}}
-            {{end}}
         </div>
+        {{end}}
 
-        <div class="d-flex justify-content-between">
+        <!-- Cancel & Save Change Button -->
+        <div class="d-flex justify-content-between mt-5">
             <a href="/products" class="btn btn-light">Cancel</a>
             <button type="submit" class="btn btn-primary">{{if .isEdit}}Save Changes{{else}}Save Product{{end}}</button>
         </div>
     </form>
 
     {{if .isEdit}}
-        {{if not .product.DeletedAt.Valid}}
-        <hr class="my-4">
-        <div class="d-flex justify-content-between align-items-center bg-danger bg-opacity-10 border border-danger-subtle rounded p-3">
-            <div>
-                <h6 class="text-danger fw-bold mb-0" style="font-size: 0.875rem;">Delete Product</h6>
-                <span class="small text-muted" style="font-size: 0.75rem;">This product will be archived and hidden from sales.</span>
-            </div>
-            <form action="/products/{{.product.ID}}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');" class="m-0">
-                <input type="hidden" name="_method" value="DELETE">
-                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Delete</button>
-            </form>
+    {{if not .product.DeletedAt.Valid}}
+    <hr class="my-4">
+    <div
+        class="d-flex justify-content-between align-items-center bg-danger bg-opacity-10 border border-danger-subtle rounded p-3">
+        <div>
+            <h6 class="text-danger fw-bold mb-0" style="font-size: 0.875rem;">Delete Product</h6>
+            <span class="small text-muted" style="font-size: 0.75rem;">This product will be archived and hidden from
+                sales.</span>
         </div>
-        {{end}}
+        <form action="/products/{{.product.ID}}" method="POST"
+            onsubmit="return confirm('Are you sure you want to delete this product?');" class="m-0">
+            <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Delete</button>
+        </form>
+    </div>
+    {{end}}
     {{end}}
 </div>
 {{end}}
