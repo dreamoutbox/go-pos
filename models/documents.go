@@ -37,15 +37,16 @@ type Refund struct {
 
 type RefundItem struct {
 	gorm.Model
-	RefundID      uint    `gorm:"not null;index" json:"refund_id"`
-	OrderItemID   uint    `gorm:"not null" json:"order_item_id"`
-	ProductID     uint    `gorm:"not null" json:"product_id"`
-	Product       Product `json:"product" gorm:"foreignKey:ProductID"`
-	Name          string  `gorm:"not null" json:"name"`
-	Price         float64 `gorm:"not null" json:"price"`
-	Quantity      int     `gorm:"not null" json:"quantity"`
-	Subtotal      float64 `gorm:"not null" json:"subtotal"`
-	ReturnToStock bool    `gorm:"default:false" json:"return_to_stock"`
+	RefundID      uint      `gorm:"not null;index" json:"refund_id"`
+	OrderItemID   uint      `gorm:"not null" json:"order_item_id"`
+	OrderItem     OrderItem `json:"order_item" gorm:"foreignKey:OrderItemID"`
+	ProductID     uint      `gorm:"not null" json:"product_id"`
+	Product       Product   `json:"product" gorm:"foreignKey:ProductID"`
+	Name          string    `gorm:"not null" json:"name"`
+	Price         float64   `gorm:"not null" json:"price"`
+	Quantity      int       `gorm:"not null" json:"quantity"`
+	Subtotal      float64   `gorm:"not null" json:"subtotal"`
+	ReturnToStock bool      `gorm:"default:false" json:"return_to_stock"`
 }
 
 // CreditNote represents a formal tax credit adjustment document against an Order
@@ -67,15 +68,16 @@ type CreditNote struct {
 
 type CreditNoteItem struct {
 	gorm.Model
-	CreditNoteID  uint    `gorm:"not null;index" json:"credit_note_id"`
-	OrderItemID   uint    `gorm:"not null" json:"order_item_id"`
-	ProductID     uint    `gorm:"not null" json:"product_id"`
-	Product       Product `json:"product" gorm:"foreignKey:ProductID"`
-	Name          string  `gorm:"not null" json:"name"`
-	Price         float64 `gorm:"not null" json:"price"`
-	Quantity      int     `gorm:"not null" json:"quantity"`
-	Subtotal      float64 `gorm:"not null" json:"subtotal"`
-	ReturnToStock bool    `gorm:"default:false" json:"return_to_stock"`
+	CreditNoteID  uint      `gorm:"not null;index" json:"credit_note_id"`
+	OrderItemID   uint      `gorm:"not null" json:"order_item_id"`
+	OrderItem     OrderItem `json:"order_item" gorm:"foreignKey:OrderItemID"`
+	ProductID     uint      `gorm:"not null" json:"product_id"`
+	Product       Product   `json:"product" gorm:"foreignKey:ProductID"`
+	Name          string    `gorm:"not null" json:"name"`
+	Price         float64   `gorm:"not null" json:"price"`
+	Quantity      int       `gorm:"not null" json:"quantity"`
+	Subtotal      float64   `gorm:"not null" json:"subtotal"`
+	ReturnToStock bool      `gorm:"default:false" json:"return_to_stock"`
 }
 
 // DebitNote represents an additional charge/fee/item document against an Order

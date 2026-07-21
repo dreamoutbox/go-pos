@@ -312,6 +312,7 @@ func ShowRefund(c *gin.Context) {
 		Preload("User").
 		Preload("Shop").
 		Preload("RefundItems.Product").
+		Preload("RefundItems.OrderItem").
 		First(&refund).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Refund record not found"})
 		return

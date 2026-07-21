@@ -30,7 +30,7 @@
                             <tr class="text-muted small">
                                 <th>Item Name</th>
                                 <th class="text-end">Price</th>
-                                <th class="text-end">Purchased Qty</th>
+                                <th class="text-end">Original Qty</th>
                                 <th class="text-end" style="width: 140px;">Credit Qty</th>
                                 <th class="text-center" style="width: 150px;">Return Stock?</th>
                             </tr>
@@ -38,9 +38,20 @@
                         <tbody>
                             {{range .order.OrderItems}}
                             <tr>
-                                <td><span class="fw-semibold">{{.Name}}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {{if .Product.ImagePath}}
+                                        <img src="{{.Product.ImagePath}}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" alt="{{.Name}}">
+                                        {{else}}
+                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                        {{end}}
+                                        <span class="fw-semibold">{{.Name}}</span>
+                                    </div>
+                                </td>
                                 <td class="text-end">฿{{formatMoney .Price}}</td>
-                                <td class="text-end">{{.Quantity}}</td>
+                                <td class="text-end"><span class="badge bg-secondary-subtle text-secondary border px-2">{{.Quantity}}</span></td>
                                 <td>
                                     <input type="number" class="form-control form-control-sm text-end cn-qty-input"
                                         data-order-item-id="{{.ID}}" min="0" max="{{.Quantity}}" value="0">

@@ -32,9 +32,9 @@
 
                 <!-- Hidden Master Product Options Template for JS -->
                 <select id="productsMaster" style="display: none;">
-                    <option value="">-- Custom Fee / Adjustment --</option>
+                    <option value="" data-image="">-- Custom Fee / Adjustment --</option>
                     {{range .products}}
-                    <option value="{{.ID}}" data-name="{{.Name}}" data-price="{{.Price}}">{{.Name}} (฿{{.Price}})
+                    <option value="{{.ID}}" data-name="{{.Name}}" data-price="{{.Price}}" data-image="{{.ImagePath}}">{{.Name}} (฿{{.Price}})
                     </option>
                     {{end}}
                 </select>
@@ -77,10 +77,19 @@
         tr.id = rowId;
         tr.innerHTML = `
         <td>
-            <select class="form-select form-select-sm mb-1 prod-select" onchange="onProductSelect(this, '${rowId}')">
-                ${masterOptions}
-            </select>
-            <input type="text" class="form-control form-control-sm item-name-input" placeholder="Custom description..." value="${name}">
+            <div class="d-flex align-items-center gap-2">
+                <div class="img-preview" style="width: 40px; height: 40px; flex-shrink: 0;">
+                    <div class="bg-light rounded border d-flex align-items-center justify-content-center h-100 w-100">
+                        <i class="bi bi-image text-muted"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <select class="form-select form-select-sm mb-1 prod-select" onchange="onProductSelect(this, '${rowId}')">
+                        ${masterOptions}
+                    </select>
+                    <input type="text" class="form-control form-control-sm item-name-input" placeholder="Custom description..." value="${name}">
+                </div>
+            </div>
         </td>
         <td>
             <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end item-price-input" value="${price}">
@@ -102,6 +111,7 @@
         if (prodId) {
             const select = tr.querySelector(".prod-select");
             select.value = prodId;
+            onProductSelect(select, rowId);
         }
     }
 
@@ -111,15 +121,25 @@
         const nameInput = row.querySelector(".item-name-input");
         const priceInput = row.querySelector(".item-price-input");
         const stockInput = row.querySelector(".item-stock-input");
+        const imgPreview = row.querySelector(".img-preview");
 
         if (selectElem.value) {
             const name = selectedOpt.getAttribute("data-name");
             const price = selectedOpt.getAttribute("data-price");
+            const image = selectedOpt.getAttribute("data-image");
+
             if (name) nameInput.value = name;
             if (price) priceInput.value = price;
             stockInput.checked = true;
+
+            if (image) {
+                imgPreview.innerHTML = `<img src="${image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;">`;
+            } else {
+                imgPreview.innerHTML = `<div class="bg-light rounded border d-flex align-items-center justify-content-center h-100 w-100"><i class="bi bi-image text-muted"></i></div>`;
+            }
         } else {
             stockInput.checked = false;
+            imgPreview.innerHTML = `<div class="bg-light rounded border d-flex align-items-center justify-content-center h-100 w-100"><i class="bi bi-image text-muted"></i></div>`;
         }
     }
 

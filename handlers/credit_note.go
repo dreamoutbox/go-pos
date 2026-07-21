@@ -244,6 +244,7 @@ func ShowCreditNote(c *gin.Context) {
 		Preload("User").
 		Preload("Shop").
 		Preload("CreditNoteItems.Product").
+		Preload("CreditNoteItems.OrderItem").
 		First(&creditNote).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Credit Note record not found"})
 		return
@@ -271,6 +272,7 @@ func PrintCreditNote(c *gin.Context) {
 		Preload("User").
 		Preload("Shop").
 		Preload("CreditNoteItems.Product").
+		Preload("CreditNoteItems.OrderItem").
 		First(&creditNote).Error; err != nil {
 		c.HTML(http.StatusNotFound, "error/404.html", gin.H{"error": "Credit Note record not found"})
 		return

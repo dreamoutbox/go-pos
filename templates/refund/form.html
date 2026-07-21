@@ -4,24 +4,19 @@
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 class="fw-bold mb-1"><i class="bi bi-arrow-return-left me-2 text-danger"></i>Issue Refund (RFD)
-                    </h4>
-                    <p class="text-muted small mb-0">For Order: <strong>{{if
-                            .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</strong></p>
+                    <h4 class="fw-bold mb-1"><i class="bi bi-arrow-return-left me-2 text-danger"></i>Issue Refund (RFD)</h4>
+                    <p class="text-muted small mb-0">For Order: <strong>{{if .order.Code}}{{.order.Code}}{{else}}#{{.order.ID}}{{end}}</strong></p>
                 </div>
-                <a href="/orders/{{.order.ID}}" class="btn btn-outline-secondary btn-sm"><i
-                        class="bi bi-arrow-left me-1"></i>Back to Order</a>
+                <a href="/orders/{{.order.ID}}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Order</a>
             </div>
 
             <form id="refundForm" onsubmit="submitRefund(event)">
                 <div class="mb-4">
                     <label for="reason" class="form-label small fw-semibold text-muted">Refund Reason / Note</label>
-                    <input type="text" class="form-control" id="reason" name="reason"
-                        placeholder="e.g. Defective product, customer changed mind">
+                    <input type="text" class="form-control" id="reason" name="reason" placeholder="e.g. Defective product, customer changed mind">
                 </div>
 
-                <h6 class="fw-bold mb-3 text-secondary text-uppercase"
-                    style="font-size: 0.75rem; letter-spacing: 0.05em;">Select Items & Quantities to Refund</h6>
+                <h6 class="fw-bold mb-3 text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">Select Items & Quantities to Refund</h6>
 
                 <div class="table-responsive mb-4">
                     <table class="table align-middle border">
@@ -29,7 +24,7 @@
                             <tr class="text-muted small">
                                 <th>Item Name</th>
                                 <th class="text-end">Price</th>
-                                <th class="text-end">Purchased</th>
+                                <th class="text-end">Original Qty</th>
                                 <th class="text-end" style="width: 140px;">Refund Qty</th>
                                 <th class="text-center" style="width: 150px;">Return Stock?</th>
                             </tr>
@@ -37,18 +32,26 @@
                         <tbody>
                             {{range .order.OrderItems}}
                             <tr>
-                                <td><span class="fw-semibold">{{.Name}}</span></td>
-                                <td class="text-end">฿{{formatMoney .Price}}</td>
-                                <td class="text-end">{{.Quantity}}</td>
                                 <td>
-                                    <input type="number" class="form-control form-control-sm text-end refund-qty-input"
-                                        data-order-item-id="{{.ID}}" data-price="{{.Price}}" min="0" max="{{.Quantity}}"
-                                        value="0">
+                                    <div class="d-flex align-items-center gap-2">
+                                        {{if .Product.ImagePath}}
+                                        <img src="{{.Product.ImagePath}}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" alt="{{.Name}}">
+                                        {{else}}
+                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                        {{end}}
+                                        <span class="fw-semibold">{{.Name}}</span>
+                                    </div>
+                                </td>
+                                <td class="text-end">฿{{formatMoney .Price}}</td>
+                                <td class="text-end"><span class="badge bg-secondary-subtle text-secondary border px-2">{{.Quantity}}</span></td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm text-end refund-qty-input" data-order-item-id="{{.ID}}" data-price="{{.Price}}" min="0" max="{{.Quantity}}" value="0">
                                 </td>
                                 <td class="text-center">
                                     <div class="form-check form-switch d-inline-block">
-                                        <input class="form-check-input return-stock-input" type="checkbox"
-                                            data-order-item-id="{{.ID}}" checked>
+                                        <input class="form-check-input return-stock-input" type="checkbox" data-order-item-id="{{.ID}}" checked>
                                     </div>
                                 </td>
                             </tr>
