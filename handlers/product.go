@@ -23,6 +23,13 @@ type ProductFormInput struct {
 	Description string  `form:"description" json:"description"`
 }
 
+func (input ProductFormInput) GetCategoryID() uint {
+	if input.CategoryID != nil {
+		return *input.CategoryID
+	}
+	return 0
+}
+
 func getCategories() []models.Category {
 	var categories []models.Category
 	config.DB.Order("name ASC").Find(&categories)

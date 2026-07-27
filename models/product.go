@@ -19,6 +19,13 @@ type Product struct {
 	Stock       int       `gorm:"default:0" json:"stock"` // current stock quantity
 }
 
+func (p Product) GetCategoryID() uint {
+	if p.CategoryID != nil {
+		return *p.CategoryID
+	}
+	return 0
+}
+
 type StockHistory struct {
 	gorm.Model
 	ProductID uint    `gorm:"not null;index" json:"product_id"`

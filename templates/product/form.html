@@ -56,7 +56,10 @@
             <select class="form-select" id="category_id" name="category_id">
                 <option value="">-- Select Category --</option>
                 {{range $.categories}}
-                <option value="{{.ID}}" {{if $.isEdit}}{{if $.product.CategoryID}}{{if eq $.product.CategoryID .ID}}selected{{end}}{{end}}{{else}}{{if $.input}}{{if $.input.CategoryID}}{{if eq $.input.CategoryID .ID}}selected{{end}}{{end}}{{end}}{{end}}>{{.Name}}</option>
+                <option value="{{.ID}}" {{if $.isEdit}} {{if eq $.product.GetCategoryID .ID}}selected{{end}} {{else}}
+                    {{if $.input}} {{if eq $.input.GetCategoryID .ID}}selected{{end}} {{end}} {{end}}>
+                    {{.Name}}
+                </option>
                 {{end}}
             </select>
         </div>
