@@ -5,15 +5,30 @@
         <div class="card p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Select Products</h5>
-                <div class="input-group input-group-sm" style="max-width: 250px;">
+                <div class="input-group input-group-sm" style="max-width: 230px;">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" id="searchInput" onkeyup="filterProducts()" class="form-control border-start-0" placeholder="Search product or SKU...">
                 </div>
             </div>
+
+            <!-- Category Filter Pills -->
+            <div class="d-flex flex-nowrap overflow-x-auto pb-2 mb-3 gap-1 align-items-center" id="categoryPillsContainer" style="scrollbar-width: thin;">
+                <button type="button" class="btn btn-primary btn-sm rounded-pill text-nowrap category-pill px-3 py-1" onclick="selectCategory('', this)" data-category-id="">
+                    All Categories
+                </button>
+                {{range .categories}}
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill text-nowrap category-pill px-3 py-1" onclick="selectCategory('{{.ID}}', this)" data-category-id="{{.ID}}">
+                    {{.Name}}
+                </button>
+                {{end}}
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill text-nowrap category-pill px-3 py-1" onclick="selectCategory('uncategorized', this)" data-category-id="uncategorized">
+                    Uncategorized
+                </button>
+            </div>
             
             <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3" id="productsGrid">
                 {{range .products}}
-                <div class="col product-card-container" data-name="{{.Name}}" data-sku="{{.SKU}}">
+                <div class="col product-card-container" data-name="{{.Name}}" data-sku="{{.SKU}}" data-category-id="{{if .CategoryID}}{{.CategoryID}}{{else}}uncategorized{{end}}">
                     <div class="card h-100 p-2 text-center clickable-card" onclick="addToCart('{{.ID}}', '{{.Name}}', {{.Price}}, {{.Stock}})" style="cursor: pointer; border-radius: 8px;">
                         {{if .ImagePath}}
                         <img src="{{.ImagePath}}" class="rounded product-img-thumbnail mx-auto my-1" alt="{{.Name}}">
@@ -21,6 +36,9 @@
                         <div class="bg-light rounded py-3 mb-1"><i class="bi bi-image text-muted fs-4"></i></div>
                         {{end}}
                         <div class="small fw-semibold text-truncate">{{.Name}}</div>
+                        {{if .Category}}
+                        <div class="text-truncate mb-1"><span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.65rem;">{{.Category.Name}}</span></div>
+                        {{end}}
                         <div class="text-muted" style="font-size: 0.75rem;">Qty: <span class="fw-bold">{{.Stock}}</span></div>
                         <div class="text-primary fw-bold small mt-1">฿{{formatMoney .Price}}</div>
                     </div>
@@ -193,6 +211,22 @@ function updateCartUI() {
     document.getElementById("cartTotal").innerText = "฿" + displayTotal.toFixed(2);
 }
 
+let selectedCategoryId = "";
+
+function selectCategory(catId, btn) {
+    selectedCategoryId = catId;
+    const pills = document.querySelectorAll("#categoryPillsContainer .category-pill");
+    pills.forEach(pill => {
+        pill.classList.remove("btn-primary");
+        pill.classList.add("btn-outline-secondary");
+    });
+    if (btn) {
+        btn.classList.remove("btn-outline-secondary");
+        btn.classList.add("btn-primary");
+    }
+    filterProducts();
+}
+
 function filterProducts() {
     const query = document.getElementById("searchInput").value.toLowerCase();
     const cards = document.querySelectorAll(".product-card-container");
@@ -200,7 +234,12 @@ function filterProducts() {
     cards.forEach(card => {
         const name = card.getAttribute("data-name").toLowerCase();
         const sku = card.getAttribute("data-sku").toLowerCase();
-        if (name.includes(query) || sku.includes(query)) {
+        const catId = card.getAttribute("data-category-id");
+
+        const matchesQuery = name.includes(query) || sku.includes(query);
+        const matchesCategory = (selectedCategoryId === "") || (catId === selectedCategoryId);
+
+        if (matchesQuery && matchesCategory) {
             card.style.display = "block";
         } else {
             card.style.display = "none";

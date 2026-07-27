@@ -17,9 +17,16 @@ import (
 type ProductFormInput struct {
 	Name        string  `form:"name" json:"name" validate:"required"`
 	SKU         string  `form:"sku" json:"sku"`
+	CategoryID  *uint   `form:"category_id" json:"category_id"`
 	Price       float64 `form:"price" json:"price" validate:"required,gt=0"`
 	Cost        float64 `form:"cost" json:"cost" validate:"gte=0"`
 	Description string  `form:"description" json:"description"`
+}
+
+func getCategories() []models.Category {
+	var categories []models.Category
+	config.DB.Order("name ASC").Find(&categories)
+	return categories
 }
 
 func isJSONRequest(c *gin.Context) bool {
@@ -35,7 +42,7 @@ func ListProducts(c *gin.Context) {
 	if showDeleted {
 		query = query.Unscoped()
 	}
-	if err := query.Where("shop_id = ?", shopID).Order("id desc").Find(&products).Error; err != nil {
+	if err := query.Where("shop_id = ?", shopID).Preload("Category").Order("id desc").Find(&products).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": err.Error()})
 		return
 	}
@@ -72,9 +79,10 @@ func ShowProduct(c *gin.Context) {
 
 func NewProductForm(c *gin.Context) {
 	c.HTML(http.StatusOK, "product/form.html", gin.H{
-		"isEdit": false,
-		"user":   c.MustGet("user"),
-		"shop":   c.MustGet("shop"),
+		"isEdit":     false,
+		"categories": getCategories(),
+		"user":       c.MustGet("user"),
+		"shop":       c.MustGet("shop"),
 	})
 }
 
@@ -84,10 +92,11 @@ func CreateProduct(c *gin.Context) {
 	var input ProductFormInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.HTML(http.StatusBadRequest, "product/form.html", gin.H{
-			"error":  "Invalid input form.",
-			"isEdit": false,
-			"user":   c.MustGet("user"),
-			"shop":   c.MustGet("shop"),
+			"error":      "Invalid input form.",
+			"isEdit":     false,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}
@@ -95,11 +104,12 @@ func CreateProduct(c *gin.Context) {
 	if err := utils.Validate.Struct(input); err != nil {
 		errors := utils.FormatValidationError(err)
 		c.HTML(http.StatusUnprocessableEntity, "product/form.html", gin.H{
-			"errors": errors,
-			"input":  input,
-			"isEdit": false,
-			"user":   c.MustGet("user"),
-			"shop":   c.MustGet("shop"),
+			"errors":     errors,
+			"input":      input,
+			"isEdit":     false,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}
@@ -111,11 +121,12 @@ func CreateProduct(c *gin.Context) {
 		// Ensure upload directory exists
 		if err := os.MkdirAll(config.AppConfig.UploadDir, 0755); err != nil {
 			c.HTML(http.StatusInternalServerError, "product/form.html", gin.H{
-				"error":  "Failed to create upload directory",
-				"input":  input,
-				"isEdit": false,
-				"user":   c.MustGet("user"),
-				"shop":   c.MustGet("shop"),
+				"error":      "Failed to create upload directory",
+				"input":      input,
+				"isEdit":     false,
+				"categories": getCategories(),
+				"user":       c.MustGet("user"),
+				"shop":       c.MustGet("shop"),
 			})
 			return
 		}
@@ -124,11 +135,12 @@ func CreateProduct(c *gin.Context) {
 		savePath := filepath.Join(config.AppConfig.UploadDir, filename)
 		if err := c.SaveUploadedFile(file, savePath); err != nil {
 			c.HTML(http.StatusInternalServerError, "product/form.html", gin.H{
-				"error":  "Failed to save uploaded image",
-				"input":  input,
-				"isEdit": false,
-				"user":   c.MustGet("user"),
-				"shop":   c.MustGet("shop"),
+				"error":      "Failed to save uploaded image",
+				"input":      input,
+				"isEdit":     false,
+				"categories": getCategories(),
+				"user":       c.MustGet("user"),
+				"shop":       c.MustGet("shop"),
 			})
 			return
 		}
@@ -139,6 +151,7 @@ func CreateProduct(c *gin.Context) {
 		ShopID:      shopID,
 		Name:        input.Name,
 		SKU:         input.SKU,
+		CategoryID:  input.CategoryID,
 		Price:       input.Price,
 		Cost:        input.Cost,
 		ImagePath:   imagePath,
@@ -148,11 +161,12 @@ func CreateProduct(c *gin.Context) {
 
 	if err := config.DB.Create(&newProduct).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "product/form.html", gin.H{
-			"error":  "Failed to create product: " + err.Error(),
-			"input":  input,
-			"isEdit": false,
-			"user":   c.MustGet("user"),
-			"shop":   c.MustGet("shop"),
+			"error":      "Failed to create product: " + err.Error(),
+			"input":      input,
+			"isEdit":     false,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}
@@ -176,11 +190,12 @@ func EditProductForm(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "product/form.html", gin.H{
-		"isEdit":  true,
-		"product": product,
-		"msg":     c.Query("msg"),
-		"user":    c.MustGet("user"),
-		"shop":    c.MustGet("shop"),
+		"isEdit":     true,
+		"product":    product,
+		"categories": getCategories(),
+		"msg":        c.Query("msg"),
+		"user":       c.MustGet("user"),
+		"shop":       c.MustGet("shop"),
 	})
 }
 
@@ -202,11 +217,12 @@ func UpdateProduct(c *gin.Context) {
 	var input ProductFormInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.HTML(http.StatusBadRequest, "product/form.html", gin.H{
-			"error":   "Invalid input form.",
-			"isEdit":  true,
-			"product": product,
-			"user":    c.MustGet("user"),
-			"shop":    c.MustGet("shop"),
+			"error":      "Invalid input form.",
+			"isEdit":     true,
+			"product":    product,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}
@@ -214,12 +230,13 @@ func UpdateProduct(c *gin.Context) {
 	if err := utils.Validate.Struct(input); err != nil {
 		errors := utils.FormatValidationError(err)
 		c.HTML(http.StatusUnprocessableEntity, "product/form.html", gin.H{
-			"errors":  errors,
-			"input":   input,
-			"isEdit":  true,
-			"product": product,
-			"user":    c.MustGet("user"),
-			"shop":    c.MustGet("shop"),
+			"errors":     errors,
+			"input":      input,
+			"isEdit":     true,
+			"product":    product,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}
@@ -245,17 +262,19 @@ func UpdateProduct(c *gin.Context) {
 
 	product.Name = input.Name
 	product.SKU = input.SKU
+	product.CategoryID = input.CategoryID
 	product.Price = input.Price
 	product.Cost = input.Cost
 	product.Description = input.Description
 
 	if err := config.DB.Unscoped().Save(&product).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "product/form.html", gin.H{
-			"error":   "Failed to update product: " + err.Error(),
-			"isEdit":  true,
-			"product": product,
-			"user":    c.MustGet("user"),
-			"shop":    c.MustGet("shop"),
+			"error":      "Failed to update product: " + err.Error(),
+			"isEdit":     true,
+			"product":    product,
+			"categories": getCategories(),
+			"user":       c.MustGet("user"),
+			"shop":       c.MustGet("shop"),
 		})
 		return
 	}

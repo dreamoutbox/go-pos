@@ -51,6 +51,16 @@
             {{end}}
         </div>
 
+        <div class="mb-3">
+            <label for="category_id" class="form-label small fw-semibold text-muted">Category</label>
+            <select class="form-select" id="category_id" name="category_id">
+                <option value="">-- Select Category --</option>
+                {{range $.categories}}
+                <option value="{{.ID}}" {{if $.isEdit}}{{if $.product.CategoryID}}{{if eq $.product.CategoryID .ID}}selected{{end}}{{end}}{{else}}{{if $.input}}{{if $.input.CategoryID}}{{if eq $.input.CategoryID .ID}}selected{{end}}{{end}}{{end}}{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+
         <div class="row mb-3">
             <div class="col-6">
                 <label for="cost" class="form-label small fw-semibold text-muted">Cost Price (฿)</label>

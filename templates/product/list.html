@@ -27,6 +27,7 @@
                 <tr class="text-muted small">
                     <th>Image</th>
                     <th>Name</th>
+                    <th>Category</th>
                     <th>SKU</th>
                     <th class="text-end">Cost</th>
                     <th class="text-end">Price</th>
@@ -52,6 +53,13 @@
                         <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Deleted</span>
                         {{end}}
                     </td>
+                    <td>
+                        {{if .Category}}
+                        <span class="badge bg-light text-dark border">{{.Category.Name}}</span>
+                        {{else}}
+                        <span class="text-muted small">-</span>
+                        {{end}}
+                    </td>
                     <td><code class="small text-muted">{{if .SKU}}{{.SKU}}{{else}}-{{end}}</code></td>
                     <td class="text-end text-muted">฿{{formatMoney .Cost}}</td>
                     <td class="text-end fw-semibold {{if .DeletedAt.Valid}}text-muted{{else}}text-primary{{end}}">฿{{formatMoney .Price}}</td>
@@ -64,7 +72,7 @@
                 </tr>
                 {{else}}
                 <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
+                    <td colspan="8" class="text-center py-5 text-muted">
                         <i class="bi bi-box2 fs-1 mb-2 d-block"></i>
                         No products found. Start by adding a product!
                     </td>

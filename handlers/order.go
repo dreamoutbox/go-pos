@@ -42,15 +42,19 @@ func NewOrderPage(c *gin.Context) {
 	shopID := c.MustGet("shopID").(uint)
 
 	var products []models.Product
-	if err := config.DB.Where("shop_id = ? AND stock > 0", shopID).Find(&products).Error; err != nil {
+	if err := config.DB.Where("shop_id = ? AND stock > 0", shopID).Preload("Category").Find(&products).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": err.Error()})
 		return
 	}
 
+	var categories []models.Category
+	config.DB.Order("name ASC").Find(&categories)
+
 	c.HTML(http.StatusOK, "order/new.html", gin.H{
-		"products": products,
-		"user":     c.MustGet("user"),
-		"shop":     c.MustGet("shop"),
+		"products":   products,
+		"categories": categories,
+		"user":       c.MustGet("user"),
+		"shop":       c.MustGet("shop"),
 	})
 }
 

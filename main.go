@@ -163,6 +163,7 @@ func main() {
 
 	// Migrate schemas
 	config.DB.AutoMigrate(
+		&models.Category{},
 		&models.Shop{},
 		&models.User{},
 		&models.Product{},
@@ -183,6 +184,7 @@ func main() {
 
 	// Seed default data if database is empty
 	seedDefaultData()
+	seedCategories()
 
 	r := gin.Default()
 
@@ -358,6 +360,28 @@ func backfillOrderCodes() {
 			} else {
 				tx.Rollback()
 			}
+		}
+	}
+}
+
+func seedCategories() {
+	defaultCategories := []string{
+		"Beverages",
+		"Snacks",
+		"Dairy",
+		"Bakery",
+		"Personal Care",
+		"Household",
+		"Alcohol & Tobacco",
+		"Health",
+		"Stationery",
+		"Other",
+	}
+
+	for _, name := range defaultCategories {
+		var cat models.Category
+		if err := config.DB.Where("name = ?", name).First(&cat).Error; err != nil {
+			config.DB.Create(&models.Category{Name: name})
 		}
 	}
 }
