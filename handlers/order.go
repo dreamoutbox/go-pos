@@ -38,6 +38,11 @@ func ListOrders(c *gin.Context) {
 	})
 }
 
+type CategoryGroup struct {
+	CategoryName string
+	Products     []models.Product
+}
+
 func NewOrderPage(c *gin.Context) {
 	shopID := c.MustGet("shopID").(uint)
 
@@ -50,11 +55,40 @@ func NewOrderPage(c *gin.Context) {
 	var categories []models.Category
 	config.DB.Order("name ASC").Find(&categories)
 
+	catMap := make(map[uint][]models.Product)
+	var uncategorized []models.Product
+
+	for _, p := range products {
+		if p.CategoryID != nil && *p.CategoryID > 0 {
+			catMap[*p.CategoryID] = append(catMap[*p.CategoryID], p)
+		} else {
+			uncategorized = append(uncategorized, p)
+		}
+	}
+
+	var categoryGroups []CategoryGroup
+	for _, cat := range categories {
+		if prods, ok := catMap[cat.ID]; ok && len(prods) > 0 {
+			categoryGroups = append(categoryGroups, CategoryGroup{
+				CategoryName: cat.Name,
+				Products:     prods,
+			})
+		}
+	}
+
+	if len(uncategorized) > 0 {
+		categoryGroups = append(categoryGroups, CategoryGroup{
+			CategoryName: "Uncategorized",
+			Products:     uncategorized,
+		})
+	}
+
 	c.HTML(http.StatusOK, "order/new.html", gin.H{
-		"products":   products,
-		"categories": categories,
-		"user":       c.MustGet("user"),
-		"shop":       c.MustGet("shop"),
+		"products":       products,
+		"categories":     categories,
+		"categoryGroups": categoryGroups,
+		"user":           c.MustGet("user"),
+		"shop":           c.MustGet("shop"),
 	})
 }
 
