@@ -8,6 +8,7 @@
             <option value="month">Past 30 Days</option>
         </select>
         <button onclick="printReport()" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer me-1"></i>Print Report</button>
+        <button onclick="exportExcel()" class="btn btn-success btn-sm"><i class="bi bi-file-earmark-excel me-1"></i>Export Excel</button>
     </div>
 </div>
 
@@ -275,6 +276,11 @@ function updateLowStockTable(lowStock) {
 function printReport() {
     const range = document.getElementById("rangeSelector").value;
     window.open(`/reports/print?range=${range}`, '_blank');
+}
+
+function exportExcel() {
+    const range = document.getElementById("rangeSelector").value;
+    window.location.href = `/reports/export?range=${range}`;
 }
 
 // Initial Fetch

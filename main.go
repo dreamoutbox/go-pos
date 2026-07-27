@@ -229,6 +229,7 @@ func main() {
 		auth.GET("/reports", handlers.ReportDashboard)
 		auth.GET("/reports/data", handlers.ReportDataJSON)
 		auth.GET("/reports/print", handlers.PrintableReport)
+		auth.GET("/reports/export", handlers.ExportExcelReport)
 
 		// Refunds
 		auth.GET("/refunds", handlers.ListRefunds)
