@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -185,6 +186,7 @@ func main() {
 	// Seed default data if database is empty
 	seedDefaultData()
 	seedCategories()
+	seedMockData()
 
 	r := gin.Default()
 
@@ -383,5 +385,110 @@ func seedCategories() {
 		if err := config.DB.Where("name = ?", name).First(&cat).Error; err != nil {
 			config.DB.Create(&models.Category{Name: name})
 		}
+	}
+}
+
+type MockProductItem struct {
+	Name        string  `json:"name"`
+	SKU         string  `json:"sku"`
+	Category    string  `json:"category"`
+	Cost        float64 `json:"cost"`
+	Price       float64 `json:"price"`
+	Description string  `json:"description"`
+	Stock       int     `json:"stock"`
+	Image       string  `json:"image"`
+}
+
+func seedMockData() {
+	mockEnv := os.Getenv("MOCK_DATA")
+	if strings.TrimSpace(mockEnv) == "" {
+		return
+	}
+
+	mockFilePath := "demo/products.mock.json"
+	data, err := os.ReadFile(mockFilePath)
+	if err != nil {
+		fmt.Printf("Warning: failed to read mock data file %s: %v\n", mockFilePath, err)
+		return
+	}
+
+	var mockItems []MockProductItem
+	if err := json.Unmarshal(data, &mockItems); err != nil {
+		fmt.Printf("Warning: failed to parse mock json data: %v\n", err)
+		return
+	}
+
+	var shop models.Shop
+	if err := config.DB.First(&shop).Error; err != nil {
+		fmt.Println("Warning: no shop found for mock data seeding")
+		return
+	}
+
+	var adminUser models.User
+	_ = config.DB.First(&adminUser)
+
+	_ = os.MkdirAll(config.AppConfig.UploadDir, 0755)
+
+	seededCount := 0
+	for _, item := range mockItems {
+		var count int64
+		config.DB.Model(&models.Product{}).Where("shop_id = ? AND sku = ?", shop.ID, item.SKU).Count(&count)
+		if count > 0 {
+			continue
+		}
+
+		var catID *uint
+		if item.Category != "" {
+			var cat models.Category
+			if err := config.DB.Where("name = ?", item.Category).First(&cat).Error; err == nil {
+				catID = &cat.ID
+			}
+		}
+
+		var imagePath string
+		if item.Image != "" {
+			srcImgPath := filepath.Join("demo", "products", item.Image)
+			if _, err := os.Stat(srcImgPath); err == nil {
+				destFilename := fmt.Sprintf("mock_%s_%s", item.SKU, item.Image)
+				destImgPath := filepath.Join(config.AppConfig.UploadDir, destFilename)
+
+				srcData, err := os.ReadFile(srcImgPath)
+				if err == nil {
+					if err := os.WriteFile(destImgPath, srcData, 0644); err == nil {
+						imagePath = "/uploads/" + destFilename
+					}
+				}
+			}
+		}
+
+		product := models.Product{
+			ShopID:      shop.ID,
+			CategoryID:  catID,
+			Name:        item.Name,
+			SKU:         item.SKU,
+			Cost:        item.Cost,
+			Price:       item.Price,
+			ImagePath:   imagePath,
+			Description: item.Description,
+			Stock:       item.Stock,
+		}
+
+		if err := config.DB.Create(&product).Error; err == nil {
+			seededCount++
+			if item.Stock > 0 && adminUser.ID > 0 {
+				history := models.StockHistory{
+					ProductID: product.ID,
+					UserID:    adminUser.ID,
+					Quantity:  item.Stock,
+					Type:      "add",
+					Note:      "Mock Data Initial Stock",
+				}
+				_ = config.DB.Create(&history)
+			}
+		}
+	}
+
+	if seededCount > 0 {
+		fmt.Printf("MOCK_DATA ENABLED: Seeded %d mock products into shop '%s'.\n", seededCount, shop.Name)
 	}
 }
