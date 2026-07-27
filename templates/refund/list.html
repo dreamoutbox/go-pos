@@ -5,6 +5,10 @@
             <h4 class="fw-bold mb-1"><i class="bi bi-arrow-return-left me-2 text-danger"></i>Refunds History</h4>
             <p class="text-muted small mb-0">Record of all issued order refunds.</p>
         </div>
+        <div class="input-group input-group-sm" style="max-width: 250px;">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="tableSearchInput" onkeyup="filterTable()" class="form-control border-start-0" placeholder="Search refund, order, staff...">
+        </div>
     </div>
 
     <div class="table-responsive">

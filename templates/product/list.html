@@ -2,14 +2,22 @@
 <div class="card p-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0">Products Catalog</h4>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <div class="input-group input-group-sm" style="max-width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="tableSearchInput" onkeyup="filterTable()" class="form-control border-start-0"
+                    placeholder="Search product, SKU...">
+            </div>
             {{if .showDeleted}}
-            <a href="/products" class="btn btn-outline-secondary btn-sm d-flex align-items-center"><i class="bi bi-eye me-1"></i>Hide Deleted</a>
+            <a href="/products" class="btn btn-outline-secondary btn-sm d-flex align-items-center"><i
+                    class="bi bi-eye me-1"></i>Hide Deleted</a>
             {{else}}
-            <a href="/products?show_deleted=true" class="btn btn-outline-secondary btn-sm d-flex align-items-center"><i class="bi bi-trash me-1"></i>Show Deleted</a>
+            <a href="/products?show_deleted=true" class="btn btn-outline-secondary btn-sm d-flex align-items-center"><i
+                    class="bi bi-trash me-1"></i>Show Deleted</a>
             {{end}}
             {{if or (eq .user.Role "superuser") (eq .user.Role "shop_owner")}}
-            <a href="/products/new" class="btn btn-primary btn-sm d-flex align-items-center"><i class="bi bi-plus-lg me-2"></i>Add Product</a>
+            <a href="/products/new" class="btn btn-primary btn-sm d-flex align-items-center"><i
+                    class="bi bi-plus-lg me-2"></i>Add Product</a>
             {{end}}
         </div>
     </div>
@@ -40,15 +48,18 @@
                 <tr class="{{if .DeletedAt.Valid}}bg-light text-muted{{end}}">
                     <td>
                         {{if .ImagePath}}
-                        <img src="{{.ImagePath}}" class="product-img-thumbnail {{if .DeletedAt.Valid}}grayscale{{end}}" alt="{{.Name}}">
+                        <img src="{{.ImagePath}}" class="product-img-thumbnail {{if .DeletedAt.Valid}}grayscale{{end}}"
+                            alt="{{.Name}}">
                         {{else}}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                            style="width: 60px; height: 60px;">
                             <i class="bi bi-image text-muted"></i>
                         </div>
                         {{end}}
                     </td>
                     <td>
-                        <a href="/products/{{.ID}}/edit" class="fw-semibold text-decoration-none {{if .DeletedAt.Valid}}text-muted{{else}}text-dark{{end}}">{{.Name}}</a>
+                        <a href="/products/{{.ID}}/edit"
+                            class="fw-semibold text-decoration-none {{if .DeletedAt.Valid}}text-muted{{else}}text-dark{{end}}">{{.Name}}</a>
                         {{if .DeletedAt.Valid}}
                         <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Deleted</span>
                         {{end}}
@@ -62,11 +73,15 @@
                     </td>
                     <td><code class="small text-muted">{{if .SKU}}{{.SKU}}{{else}}-{{end}}</code></td>
                     <td class="text-end text-muted">฿{{formatMoney .Cost}}</td>
-                    <td class="text-end fw-semibold {{if .DeletedAt.Valid}}text-muted{{else}}text-primary{{end}}">฿{{formatMoney .Price}}</td>
-                    <td class="text-end {{if .DeletedAt.Valid}}text-muted{{else if lt .Stock 10}}text-danger fw-semibold{{end}}">{{.Stock}}</td>
+                    <td class="text-end fw-semibold {{if .DeletedAt.Valid}}text-muted{{else}}text-primary{{end}}">
+                        ฿{{formatMoney .Price}}</td>
+                    <td
+                        class="text-end {{if .DeletedAt.Valid}}text-muted{{else if lt .Stock 10}}text-danger fw-semibold{{end}}">
+                        {{.Stock}}</td>
                     <td class="text-end">
                         {{if or (eq $.user.Role "superuser") (eq $.user.Role "shop_owner")}}
-                        <a href="/products/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
+                        <a href="/products/{{.ID}}/edit" class="btn btn-outline-primary btn-sm"><i
+                                class="bi bi-pencil me-1"></i>Edit</a>
                         {{end}}
                     </td>
                 </tr>
