@@ -5,6 +5,8 @@
     "category": "Beverages",
     "cost": 12.00,
     "price": 20.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Refreshing cold brewed green tea.",
     "stock": 48,
     "image": "tea.jpg"
@@ -15,6 +17,8 @@
     "category": "Beverages",
     "cost": 10.00,
     "price": 15.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Classic carbonated cola drink.",
     "stock": 60,
     "image": "softdrink.jpg"
@@ -25,6 +29,8 @@
     "category": "Snacks",
     "cost": 4.50,
     "price": 7.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Spicy instant ramen noodle soup.",
     "stock": 100,
     "image": "instantnoodle.jpg"
@@ -35,6 +41,8 @@
     "category": "Snacks",
     "cost": 8.00,
     "price": 13.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Delicious instant pork rice porridge.",
     "stock": 40,
     "image": "joke.jpg"
@@ -45,6 +53,8 @@
     "category": "Dairy",
     "cost": 18.00,
     "price": 26.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Fresh pasteurized whole milk.",
     "stock": 25,
     "image": "milk.jpg"
@@ -55,6 +65,8 @@
     "category": "Dairy",
     "cost": 45.00,
     "price": 65.00,
+    "vat_rate": 0.00,
+    "vat_exempt": true,
     "description": "Farm fresh grade-A chicken eggs.",
     "stock": 18,
     "image": "eggsdozen.jpg"
@@ -65,6 +77,8 @@
     "category": "Bakery",
     "cost": 28.00,
     "price": 42.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Soft and healthy whole wheat loaf.",
     "stock": 15,
     "image": "bread.jpg"
@@ -75,6 +89,8 @@
     "category": "Bakery",
     "cost": 12.00,
     "price": 20.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Crispy pastry filled with sweet pineapple jam.",
     "stock": 30,
     "image": "pie.jpg"
@@ -85,6 +101,8 @@
     "category": "Personal Care",
     "cost": 45.00,
     "price": 69.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Intensive moisturizing face and body cream.",
     "stock": 20,
     "image": "cream.jpg"
@@ -95,6 +113,8 @@
     "category": "Personal Care",
     "cost": 14.00,
     "price": 22.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Fragrant moisturized bath soap bar.",
     "stock": 35,
     "image": "soap.jpg"
@@ -105,6 +125,8 @@
     "category": "Household",
     "cost": 55.00,
     "price": 79.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Concentrated fabric laundry liquid.",
     "stock": 22,
     "image": "detergent.jpg"
@@ -115,6 +137,8 @@
     "category": "Household",
     "cost": 22.00,
     "price": 35.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Heavy duty kitchen scrubbing sponge.",
     "stock": 50,
     "image": "sponge.jpg"
@@ -125,6 +149,8 @@
     "category": "Alcohol & Tobacco",
     "cost": 42.00,
     "price": 60.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Premium beer.",
     "stock": 40,
     "image": "beer.jpg"
@@ -135,6 +161,8 @@
     "category": "Alcohol & Tobacco",
     "cost": 38.00,
     "price": 55.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Iconic lager.",
     "stock": 36,
     "image": "beer2.jpg"
@@ -145,6 +173,8 @@
     "category": "Health",
     "cost": 12.00,
     "price": 24.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Refreshing herbal menthol inhaler stick.",
     "stock": 80,
     "image": "inhaler.jpg"
@@ -155,6 +185,8 @@
     "category": "Health",
     "cost": 8.00,
     "price": 15.00,
+    "vat_rate": 0.00,
+    "vat_exempt": true,
     "description": "Fever and pain relief tablets.",
     "stock": 90,
     "image": "painkiller.webp"
@@ -165,6 +197,8 @@
     "category": "Stationery",
     "cost": 15.00,
     "price": 28.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Smooth writing gel ink pen.",
     "stock": 65,
     "image": "pen.jpg"
@@ -175,6 +209,8 @@
     "category": "Stationery",
     "cost": 10.00,
     "price": 18.00,
+    "vat_rate": 7.00,
+    "vat_exempt": false,
     "description": "Fine tip durable ballpoint pen.",
     "stock": 75,
     "image": "pen2.png"

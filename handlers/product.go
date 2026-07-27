@@ -15,12 +15,14 @@ import (
 )
 
 type ProductFormInput struct {
-	Name        string  `form:"name" json:"name" validate:"required"`
-	SKU         string  `form:"sku" json:"sku"`
-	CategoryID  *uint   `form:"category_id" json:"category_id"`
-	Price       float64 `form:"price" json:"price" validate:"required,gt=0"`
-	Cost        float64 `form:"cost" json:"cost" validate:"gte=0"`
-	Description string  `form:"description" json:"description"`
+	Name        string   `form:"name" json:"name" validate:"required"`
+	SKU         string   `form:"sku" json:"sku"`
+	CategoryID  *uint    `form:"category_id" json:"category_id"`
+	Price       float64  `form:"price" json:"price" validate:"required,gt=0"`
+	Cost        float64  `form:"cost" json:"cost" validate:"gte=0"`
+	VatRate     *float64 `form:"vat_rate" json:"vat_rate"`
+	VatExempt   bool     `form:"vat_exempt" json:"vat_exempt"`
+	Description string   `form:"description" json:"description"`
 }
 
 func (input ProductFormInput) GetCategoryID() uint {
@@ -154,6 +156,11 @@ func CreateProduct(c *gin.Context) {
 		imagePath = "/uploads/" + filename
 	}
 
+	vatRate := 7.0
+	if input.VatRate != nil {
+		vatRate = *input.VatRate
+	}
+
 	newProduct := models.Product{
 		ShopID:      shopID,
 		Name:        input.Name,
@@ -161,6 +168,8 @@ func CreateProduct(c *gin.Context) {
 		CategoryID:  input.CategoryID,
 		Price:       input.Price,
 		Cost:        input.Cost,
+		VatRate:     vatRate,
+		VatExempt:   input.VatExempt,
 		ImagePath:   imagePath,
 		Description: input.Description,
 		Stock:       0, // initial stock is zero, added via stock management
@@ -272,6 +281,10 @@ func UpdateProduct(c *gin.Context) {
 	product.CategoryID = input.CategoryID
 	product.Price = input.Price
 	product.Cost = input.Cost
+	if input.VatRate != nil {
+		product.VatRate = *input.VatRate
+	}
+	product.VatExempt = input.VatExempt
 	product.Description = input.Description
 
 	if err := config.DB.Unscoped().Save(&product).Error; err != nil {

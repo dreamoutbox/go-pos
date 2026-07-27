@@ -20,7 +20,7 @@
                         {{range .Products}}
                         <div class="col product-card-container" data-name="{{.Name}}" data-sku="{{.SKU}}">
                             <div class="card h-100 p-2 text-center clickable-card"
-                                onclick="addToCart('{{.ID}}', '{{.Name}}', {{.Price}}, {{.Stock}}, '{{.ImagePath}}')"
+                                onclick="addToCart('{{.ID}}', '{{.Name}}', {{.Price}}, {{.Stock}}, '{{.ImagePath}}', {{.VatRate}}, {{.VatExempt}})"
                                 style="cursor: pointer; border-radius: 8px;">
                                 {{if .ImagePath}}
                                 <img src="{{.ImagePath}}" class="rounded product-img-thumbnail mx-auto my-1"
@@ -98,7 +98,7 @@
 
     let cart = [];
 
-    function addToCart(id, name, price, maxStock, imagePath) {
+    function addToCart(id, name, price, maxStock, imagePath, vatRate, vatExempt) {
         const existing = cart.find(item => item.id === id);
         if (existing) {
             if (existing.quantity >= maxStock) {
@@ -117,7 +117,9 @@
                 price: parseFloat(price),
                 quantity: 1,
                 maxStock: maxStock,
-                imagePath: imagePath || ""
+                imagePath: imagePath || "",
+                vatRate: vatRate !== undefined && vatRate !== "" ? parseFloat(vatRate) : 7.0,
+                vatExempt: vatExempt === true || vatExempt === "true"
             });
         }
         updateCartUI();
@@ -166,10 +168,38 @@
         emptyMsg.style.display = "none";
         checkoutBtn.disabled = false;
 
-        let subtotalSum = 0;
+        let calcSubtotal = 0;
+        let calcTax = 0;
+        let calcTotal = 0;
 
         cart.forEach(item => {
-            subtotalSum += item.price * item.quantity;
+            let itemGross = item.price * item.quantity;
+            let itemNet = itemGross;
+            let itemTax = 0;
+
+            if (taxEnabled) {
+                if (item.vatExempt) {
+                    itemNet = itemGross;
+                    itemTax = 0;
+                } else {
+                    const effectiveRate = (item.vatRate > 0 ? item.vatRate : (taxRate > 0 ? taxRate : 7.0)) / 100.0;
+                    if (taxIncluded) {
+                        itemNet = itemGross / (1.0 + effectiveRate);
+                        itemTax = itemGross - itemNet;
+                    } else {
+                        itemNet = itemGross;
+                        itemTax = itemNet * effectiveRate;
+                        itemGross = itemNet + itemTax;
+                    }
+                }
+            } else {
+                itemNet = itemGross;
+                itemTax = 0;
+            }
+
+            calcSubtotal += itemNet;
+            calcTax += itemTax;
+            calcTotal += itemGross;
 
             const row = document.createElement("div");
             row.className = "d-flex justify-content-between align-items-center mb-3 cart-item-row border-bottom pb-2";
@@ -196,27 +226,11 @@
             listElement.appendChild(row);
         });
 
-        let displaySubtotal = subtotalSum;
-        let taxAmount = 0;
-        let displayTotal = subtotalSum;
-
-        if (taxEnabled) {
-            if (taxIncluded) {
-                displaySubtotal = subtotalSum / (1.0 + (taxRate / 100.0));
-                taxAmount = subtotalSum - displaySubtotal;
-                displayTotal = subtotalSum;
-            } else {
-                displaySubtotal = subtotalSum;
-                taxAmount = subtotalSum * (taxRate / 100.0);
-                displayTotal = subtotalSum + taxAmount;
-            }
-        }
-
-        document.getElementById("cartSubtotal").innerText = "฿" + displaySubtotal.toFixed(2);
+        document.getElementById("cartSubtotal").innerText = "฿" + calcSubtotal.toFixed(2);
         if (document.getElementById("cartTax")) {
-            document.getElementById("cartTax").innerText = "฿" + taxAmount.toFixed(2);
+            document.getElementById("cartTax").innerText = "฿" + calcTax.toFixed(2);
         }
-        document.getElementById("cartTotal").innerText = "฿" + displayTotal.toFixed(2);
+        document.getElementById("cartTotal").innerText = "฿" + calcTotal.toFixed(2);
     }
 
     function filterProducts() {

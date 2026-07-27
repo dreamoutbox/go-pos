@@ -118,6 +118,7 @@ func CreateOrder(c *gin.Context) {
 
 	var orderItems []models.OrderItem
 	var calculatedSubtotal float64
+	var calculatedTax float64
 	var calculatedTotal float64
 
 	// Process each cart item inside a transaction
@@ -163,7 +164,36 @@ func CreateOrder(c *gin.Context) {
 		}
 
 		itemPrice := product.Price
-		itemSubtotal := itemPrice * float64(item.Quantity)
+		itemGross := itemPrice * float64(item.Quantity)
+		var itemNet float64
+		var itemTax float64
+
+		if shop.TaxEnabled {
+			if product.VatExempt {
+				itemNet = itemGross
+				itemTax = 0
+			} else {
+				rate := product.VatRate
+				if rate <= 0 {
+					rate = shop.TaxRate
+				}
+				if rate <= 0 {
+					rate = 7.0
+				}
+				rateDecimal := rate / 100.0
+				if shop.TaxIncluded {
+					itemNet = itemGross / (1.0 + rateDecimal)
+					itemTax = itemGross - itemNet
+				} else {
+					itemNet = itemGross
+					itemTax = itemNet * rateDecimal
+					itemGross = itemNet + itemTax
+				}
+			}
+		} else {
+			itemNet = itemGross
+			itemTax = 0
+		}
 
 		orderItems = append(orderItems, models.OrderItem{
 			ProductID: product.ID,
@@ -171,32 +201,12 @@ func CreateOrder(c *gin.Context) {
 			Price:     itemPrice,
 			Cost:      product.Cost,
 			Quantity:  item.Quantity,
-			Subtotal:  itemSubtotal,
+			Subtotal:  itemNet,
 		})
 
-		calculatedTotal += itemSubtotal
-	}
-
-	var taxAmount float64
-	var subtotal float64
-
-	if shop.TaxEnabled {
-		if shop.TaxIncluded {
-			// Total already includes VAT 7%
-			// BasePrice = Total / 1.07
-			// VAT = Total - BasePrice
-			calculatedSubtotal = calculatedTotal / (1.0 + (shop.TaxRate / 100.0))
-			taxAmount = calculatedTotal - calculatedSubtotal
-			subtotal = calculatedSubtotal
-		} else {
-			// VAT is added on top
-			subtotal = calculatedTotal
-			taxAmount = subtotal * (shop.TaxRate / 100.0)
-			calculatedTotal = subtotal + taxAmount
-		}
-	} else {
-		subtotal = calculatedTotal
-		taxAmount = 0.0
+		calculatedSubtotal += itemNet
+		calculatedTax += itemTax
+		calculatedTotal += itemGross
 	}
 
 	orderCode, err := utils.GenerateDocumentCode(tx, shopID, "ORD", time.Now())
@@ -211,8 +221,8 @@ func CreateOrder(c *gin.Context) {
 		ShopID:     shopID,
 		UserID:     userID,
 		Status:     "pending",
-		Subtotal:   subtotal,
-		TaxAmount:  taxAmount,
+		Subtotal:   calculatedSubtotal,
+		TaxAmount:  calculatedTax,
 		Total:      calculatedTotal,
 		OrderItems: orderItems,
 	}

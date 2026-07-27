@@ -389,14 +389,16 @@ func seedCategories() {
 }
 
 type MockProductItem struct {
-	Name        string  `json:"name"`
-	SKU         string  `json:"sku"`
-	Category    string  `json:"category"`
-	Cost        float64 `json:"cost"`
-	Price       float64 `json:"price"`
-	Description string  `json:"description"`
-	Stock       int     `json:"stock"`
-	Image       string  `json:"image"`
+	Name        string   `json:"name"`
+	SKU         string   `json:"sku"`
+	Category    string   `json:"category"`
+	Cost        float64  `json:"cost"`
+	Price       float64  `json:"price"`
+	VatRate     *float64 `json:"vat_rate"`
+	VatExempt   bool     `json:"vat_exempt"`
+	Description string   `json:"description"`
+	Stock       int      `json:"stock"`
+	Image       string   `json:"image"`
 }
 
 func seedMockData() {
@@ -461,6 +463,11 @@ func seedMockData() {
 			}
 		}
 
+		vatRate := 7.0
+		if item.VatRate != nil {
+			vatRate = *item.VatRate
+		}
+
 		product := models.Product{
 			ShopID:      shop.ID,
 			CategoryID:  catID,
@@ -468,6 +475,8 @@ func seedMockData() {
 			SKU:         item.SKU,
 			Cost:        item.Cost,
 			Price:       item.Price,
+			VatRate:     vatRate,
+			VatExempt:   item.VatExempt,
 			ImagePath:   imagePath,
 			Description: item.Description,
 			Stock:       item.Stock,

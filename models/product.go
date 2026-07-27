@@ -14,6 +14,8 @@ type Product struct {
 	SKU         string    `gorm:"index" json:"sku"`
 	Price       float64   `gorm:"not null" json:"price" validate:"required,gt=0"`
 	Cost        float64   `gorm:"default:0" json:"cost" validate:"gte=0"`
+	VatRate     float64   `gorm:"default:7.0" json:"vat_rate"`
+	VatExempt   bool      `gorm:"default:false" json:"vat_exempt"`
 	ImagePath   string    `json:"image_path"`
 	Description string    `json:"description"`
 	Stock       int       `gorm:"default:0" json:"stock"` // current stock quantity

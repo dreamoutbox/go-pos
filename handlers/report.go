@@ -44,17 +44,71 @@ func computeVATBreakdown(total float64, shop models.Shop) (gross, net, vatPayabl
 	}
 	rate := shop.TaxRate / 100.0
 	if shop.TaxIncluded {
-		// Prices include VAT: Net = Total / (1 + rate), VAT = Total - Net
 		gross = total
 		net = total / (1 + rate)
 		vatPayable = gross - net
 	} else {
-		// Prices exclude VAT: Gross = Total * (1 + rate), VAT = Gross - Total
 		net = total
 		gross = total * (1 + rate)
 		vatPayable = gross - net
 	}
 	return
+}
+
+func computeReportSummary(orders []models.Order, refunds []models.Refund, creditNotes []models.CreditNote, debitNotes []models.DebitNote, shop models.Shop) SummaryStats {
+	var summary SummaryStats
+	summary.Orders = int64(len(orders))
+
+	var totalOrderGross float64
+	var totalOrderNet float64
+	var totalOrderVAT float64
+
+	for _, order := range orders {
+		summary.Revenue += order.Total
+
+		if order.Subtotal == 0 && order.TaxAmount == 0 && order.Total > 0 {
+			g, n, v := computeVATBreakdown(order.Total, shop)
+			totalOrderGross += g
+			totalOrderNet += n
+			totalOrderVAT += v
+		} else {
+			totalOrderGross += order.Total
+			totalOrderNet += order.Subtotal
+			totalOrderVAT += order.TaxAmount
+		}
+
+		for _, item := range order.OrderItems {
+			summary.ItemsSold += int64(item.Quantity)
+			itemProfit := item.Subtotal - (item.Cost * float64(item.Quantity))
+			summary.Profit += itemProfit
+		}
+	}
+
+	for _, r := range refunds {
+		summary.TotalRefunds += r.Total
+	}
+	for _, cn := range creditNotes {
+		summary.TotalCreditNotes += cn.Total
+	}
+	for _, dbn := range debitNotes {
+		summary.TotalDebitNotes += dbn.Total
+	}
+
+	netAdj := summary.TotalDebitNotes - summary.TotalRefunds - summary.TotalCreditNotes
+	var adjGross, adjNet, adjVAT float64
+	if shop.TaxEnabled && shop.TaxRate > 0 {
+		adjGross, adjNet, adjVAT = computeVATBreakdown(netAdj, shop)
+	} else {
+		adjGross = netAdj
+		adjNet = netAdj
+		adjVAT = 0
+	}
+
+	summary.GrossSales = totalOrderGross + adjGross
+	summary.NetSales = totalOrderNet + adjNet
+	summary.VATPayable = totalOrderVAT + adjVAT
+
+	return summary
 }
 
 func ReportDashboard(c *gin.Context) {
@@ -104,25 +158,15 @@ func ReportDataJSON(c *gin.Context) {
 	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&debitNotes)
 
 	// 2. Aggregate Summaries
-	var summary SummaryStats
-	summary.Orders = int64(len(orders))
+	summary := computeReportSummary(orders, refunds, creditNotes, debitNotes, shop)
 
 	dailyMap := make(map[string]*DailyStat)
-
 	for _, order := range orders {
-		summary.Revenue += order.Total
-
-		// Calculate profit at order level
 		var orderProfit float64
 		for _, item := range order.OrderItems {
-			summary.ItemsSold += int64(item.Quantity)
-			// Profit = item revenue - item cost
 			itemProfit := item.Subtotal - (item.Cost * float64(item.Quantity))
 			orderProfit += itemProfit
 		}
-		summary.Profit += orderProfit
-
-		// Daily aggregation
 		dateStr := order.CreatedAt.Format("2006-01-02")
 		if _, exists := dailyMap[dateStr]; !exists {
 			dailyMap[dateStr] = &DailyStat{Date: dateStr}
@@ -130,22 +174,6 @@ func ReportDataJSON(c *gin.Context) {
 		dailyMap[dateStr].Revenue += order.Total
 		dailyMap[dateStr].Profit += orderProfit
 	}
-
-	for _, r := range refunds {
-		summary.TotalRefunds += r.Total
-	}
-	for _, cn := range creditNotes {
-		summary.TotalCreditNotes += cn.Total
-	}
-	for _, dbn := range debitNotes {
-		summary.TotalDebitNotes += dbn.Total
-	}
-
-	// Adjusted net revenue = Orders + Debit Notes - Refunds - Credit Notes
-	adjustedRevenue := summary.Revenue + summary.TotalDebitNotes - summary.TotalRefunds - summary.TotalCreditNotes
-
-	// VAT breakdown over adjusted revenue
-	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(adjustedRevenue, shop)
 
 	// Format daily list
 	var dailyStats []DailyStat
@@ -222,27 +250,7 @@ func PrintableReport(c *gin.Context) {
 	var debitNotes []models.DebitNote
 	config.DB.Where("shop_id = ? AND created_at >= ?", shopID, startDate).Find(&debitNotes)
 
-	var summary SummaryStats
-	summary.Orders = int64(len(orders))
-	for _, order := range orders {
-		summary.Revenue += order.Total
-		for _, item := range order.OrderItems {
-			summary.ItemsSold += int64(item.Quantity)
-			summary.Profit += item.Subtotal - (item.Cost * float64(item.Quantity))
-		}
-	}
-	for _, r := range refunds {
-		summary.TotalRefunds += r.Total
-	}
-	for _, cn := range creditNotes {
-		summary.TotalCreditNotes += cn.Total
-	}
-	for _, dbn := range debitNotes {
-		summary.TotalDebitNotes += dbn.Total
-	}
-
-	adjustedRevenue := summary.Revenue + summary.TotalDebitNotes - summary.TotalRefunds - summary.TotalCreditNotes
-	summary.GrossSales, summary.NetSales, summary.VATPayable = computeVATBreakdown(adjustedRevenue, shop)
+	summary := computeReportSummary(orders, refunds, creditNotes, debitNotes, shop)
 
 	var topProducts []TopProduct
 	config.DB.Table("order_items").
