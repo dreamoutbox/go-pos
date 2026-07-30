@@ -1,9 +1,11 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,6 +20,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
 )
+
+//go:embed templates static demo
+var embeddedFS embed.FS
 
 type CustomRender struct {
 	templates map[string]*template.Template
@@ -99,11 +104,11 @@ func loadTemplates() CustomRender {
 		"error/500.html":         true,
 	}
 
-	err := filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
+	err := fs.WalkDir(embeddedFS, "templates", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && filepath.Ext(path) == ".html" {
+		if !d.IsDir() && filepath.Ext(path) == ".html" {
 			relPath, err := filepath.Rel("templates", path)
 			if err != nil {
 				return err
@@ -117,7 +122,7 @@ func loadTemplates() CustomRender {
 			t := template.New(relPath).Funcs(funcMap)
 
 			if standalones[relPath] {
-				content, err := os.ReadFile(path)
+				content, err := fs.ReadFile(embeddedFS, path)
 				if err != nil {
 					return err
 				}
@@ -126,7 +131,7 @@ func loadTemplates() CustomRender {
 					panic(err)
 				}
 			} else {
-				baseContent, err := os.ReadFile("templates/layout/base.html")
+				baseContent, err := fs.ReadFile(embeddedFS, "templates/layout/base.html")
 				if err != nil {
 					panic(err)
 				}
@@ -135,7 +140,7 @@ func loadTemplates() CustomRender {
 					panic(err)
 				}
 
-				pageContent, err := os.ReadFile(path)
+				pageContent, err := fs.ReadFile(embeddedFS, path)
 				if err != nil {
 					panic(err)
 				}
@@ -191,11 +196,16 @@ func main() {
 
 	r := gin.Default()
 
-	// Load HTML custom templates
+	// Load HTML custom templates from embedded FS
 	r.HTMLRender = loadTemplates()
 
-	// Static Assets
-	r.Static("/static", "./static")
+	// Static Assets from embedded FS
+	staticFS, err := fs.Sub(embeddedFS, "static")
+	if err == nil {
+		r.StaticFS("/static", http.FS(staticFS))
+	} else {
+		r.Static("/static", "./static")
+	}
 	// Make sure upload directory exists and serve
 	_ = os.MkdirAll(config.AppConfig.UploadDir, 0755)
 	r.Static("/uploads", config.AppConfig.UploadDir)
@@ -410,10 +420,13 @@ func seedMockData() {
 	}
 
 	mockFilePath := "demo/products.mock.json"
-	data, err := os.ReadFile(mockFilePath)
+	data, err := fs.ReadFile(embeddedFS, mockFilePath)
 	if err != nil {
-		fmt.Printf("Warning: failed to read mock data file %s: %v\n", mockFilePath, err)
-		return
+		data, err = os.ReadFile(mockFilePath)
+		if err != nil {
+			fmt.Printf("Warning: failed to read mock data file %s: %v\n", mockFilePath, err)
+			return
+		}
 	}
 
 	var mockItems []MockProductItem
@@ -451,16 +464,16 @@ func seedMockData() {
 
 		var imagePath string
 		if item.Image != "" {
-			srcImgPath := filepath.Join("demo", "products", item.Image)
-			if _, err := os.Stat(srcImgPath); err == nil {
+			srcImgPath := "demo/products/" + item.Image
+			srcData, err := fs.ReadFile(embeddedFS, srcImgPath)
+			if err != nil {
+				srcData, err = os.ReadFile(filepath.Join("demo", "products", item.Image))
+			}
+			if err == nil {
 				destFilename := fmt.Sprintf("mock_%s_%s", item.SKU, item.Image)
 				destImgPath := filepath.Join(config.AppConfig.UploadDir, destFilename)
-
-				srcData, err := os.ReadFile(srcImgPath)
-				if err == nil {
-					if err := os.WriteFile(destImgPath, srcData, 0644); err == nil {
-						imagePath = "/uploads/" + destFilename
-					}
+				if err := os.WriteFile(destImgPath, srcData, 0644); err == nil {
+					imagePath = "/uploads/" + destFilename
 				}
 			}
 		}
