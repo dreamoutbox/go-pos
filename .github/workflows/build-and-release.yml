@@ -25,11 +25,11 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Build Binary & Package
+      - name: Build Standalone Binary
         run: |
           mkdir -p dist
           GOOS=linux GOARCH=amd64 go build -o dist/go-pos-linux-amd64 .
-          tar -czvf dist/go-pos-linux-amd64.tar.gz dist/go-pos-linux-amd64 templates static
+          tar -czvf dist/go-pos-linux-amd64.tar.gz -C dist go-pos-linux-amd64
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
