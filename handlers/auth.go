@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/dreamoutbox/go-pos/config"
-	"github.com/dreamoutbox/go-pos/middleware"
 	"github.com/dreamoutbox/go-pos/models"
 	"github.com/dreamoutbox/go-pos/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginInput struct {
@@ -18,10 +16,13 @@ type LoginInput struct {
 }
 
 func ShowLoginPage(c *gin.Context) {
-	// If already logged in, redirect to dashboard
-	if _, err := c.Cookie("token"); err == nil {
-		c.Redirect(http.StatusSeeOther, "/")
-		return
+	// If already logged in with a valid session, redirect to dashboard
+	if tokenStr, err := c.Cookie("session_token"); err == nil && tokenStr != "" {
+		var session models.Session
+		if err := config.DB.Where("token = ? AND expires_at > ?", tokenStr, time.Now()).First(&session).Error; err == nil {
+			c.Redirect(http.StatusSeeOther, "/")
+			return
+		}
 	}
 	c.HTML(http.StatusOK, "auth/login.html", gin.H{})
 }
@@ -62,33 +63,38 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Create JWT token
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &middleware.Claims{
-		UserID:   user.ID,
-		ShopID:   user.ShopID,
-		Role:     user.Role,
-		UserName: user.Name,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(config.AppConfig.JWTSecret)
+	// Generate session token
+	tokenString, err := utils.GenerateSessionToken()
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "auth/login.html", gin.H{
-			"error": "Failed to generate token.",
+			"error": "Failed to create user session.",
 			"input": input,
 		})
 		return
 	}
 
-	// Set HTTP-only cookie
+	// Create session record in database (valid for 7 days)
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	session := models.Session{
+		Token:        tokenString,
+		UserID:       user.ID,
+		ActiveShopID: user.ShopID,
+		ExpiresAt:    expiresAt,
+	}
+
+	if err := config.DB.Create(&session).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "auth/login.html", gin.H{
+			"error": "Failed to persist user session.",
+			"input": input,
+		})
+		return
+	}
+
+	// Set HTTP-only session cookie
 	c.SetCookie(
-		"token",
+		"session_token",
 		tokenString,
-		86400, // 24 hours in seconds
+		86400*7, // 7 days in seconds
 		"/",
 		"",
 		false, // secure (set to true in production if HTTPS)
@@ -99,9 +105,13 @@ func Login(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
-	// Clear the token cookie
+	if tokenStr, err := c.Cookie("session_token"); err == nil && tokenStr != "" {
+		config.DB.Where("token = ?", tokenStr).Delete(&models.Session{})
+	}
+
+	// Clear the session_token cookie
 	c.SetCookie(
-		"token",
+		"session_token",
 		"",
 		-1,
 		"/",
@@ -110,21 +120,4 @@ func Logout(c *gin.Context) {
 		true,
 	)
 	c.Redirect(http.StatusSeeOther, "/login")
-}
-
-// issueJWT creates and signs a JWT for the given user context.
-// shopID can differ from the user's own ShopID to allow superuser shop switching.
-func issueJWT(userID, shopID uint, role, name string) (string, error) {
-	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-	claims := &middleware.Claims{
-		UserID:   userID,
-		ShopID:   shopID,
-		Role:     role,
-		UserName: name,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(config.AppConfig.JWTSecret)
 }

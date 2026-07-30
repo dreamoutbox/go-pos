@@ -246,16 +246,10 @@ func SwitchShop(c *gin.Context) {
 		return
 	}
 
-	user := c.MustGet("user").(models.User)
-
-	// Re-issue JWT with the selected shop ID
-	token, err := issueJWT(user.ID, uint(id), user.Role, user.Name)
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error/500.html", gin.H{"error": "Failed to switch shop context"})
-		return
+	if tokenVal, exists := c.Get("sessionToken"); exists {
+		config.DB.Model(&models.Session{}).Where("token = ?", tokenVal.(string)).Update("active_shop_id", uint(id))
 	}
 
-	c.SetCookie("token", token, 3600*24*7, "/", "", false, true)
 	c.Redirect(http.StatusSeeOther, "/")
 }
 

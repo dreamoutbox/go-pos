@@ -1,66 +1,52 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/dreamoutbox/go-pos/config"
 	"github.com/dreamoutbox/go-pos/models"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
-
-type Claims struct {
-	UserID   uint   `json:"user_id"`
-	ShopID   uint   `json:"shop_id"`
-	Role     string `json:"role"`
-	UserName string `json:"user_name"`
-	jwt.RegisteredClaims
-}
 
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenStr, err := c.Cookie("token")
-		if err != nil {
-			respondUnauthorized(c)
-			return
-		}
-
-		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		tokenStr, err := c.Cookie("session_token")
+		if err != nil || tokenStr == "" {
+			// Fallback check for legacy "token" cookie
+			tokenStr, err = c.Cookie("token")
+			if err != nil || tokenStr == "" {
+				respondUnauthorized(c)
+				return
 			}
-			return config.AppConfig.JWTSecret, nil
-		})
+		}
 
-		if err != nil || !token.Valid {
+		var session models.Session
+		if err := config.DB.Preload("User.Shop").
+			Where("token = ? AND expires_at > ?", tokenStr, time.Now()).
+			First(&session).Error; err != nil {
 			respondUnauthorized(c)
 			return
 		}
 
-		// Inject claims into context
-		c.Set("userID", claims.UserID)
-		c.Set("shopID", claims.ShopID)
-		c.Set("role", claims.Role)
-		c.Set("userName", claims.UserName)
+		user := session.User
 
-		// Fetch and inject User into context (always by real user ID)
-		var user models.User
-		if err := config.DB.Preload("Shop").First(&user, claims.UserID).Error; err != nil {
-			respondUnauthorized(c)
-			return
-		}
-		c.Set("user", user)
-
-		// Fetch active shop by claims.ShopID — may differ from user.ShopID when superuser switches
+		// Fetch active shop by session.ActiveShopID — may differ from user.ShopID when superuser switches
 		var activeShop models.Shop
-		if err := config.DB.First(&activeShop, claims.ShopID).Error; err != nil {
+		if err := config.DB.First(&activeShop, session.ActiveShopID).Error; err != nil {
 			respondUnauthorized(c)
 			return
 		}
+
+		// Inject user and shop info into context
+		c.Set("userID", user.ID)
+		c.Set("shopID", activeShop.ID)
+		c.Set("role", user.Role)
+		c.Set("userName", user.Name)
+		c.Set("user", user)
 		c.Set("shop", activeShop)
+		c.Set("sessionToken", session.Token)
 
 		c.Next()
 	}
@@ -113,7 +99,6 @@ func ShopOwnerRequired() gin.HandlerFunc {
 func AdminRequired() gin.HandlerFunc {
 	return ShopOwnerRequired()
 }
-
 
 func isAPIRequest(c *gin.Context) bool {
 	return strings.HasPrefix(c.Request.URL.Path, "/api/") || c.GetHeader("Accept") == "application/json"

@@ -39,7 +39,8 @@ func getCategories() []models.Category {
 }
 
 func isJSONRequest(c *gin.Context) bool {
-	return c.GetHeader("Accept") == "application/json" || c.GetHeader("X-Requested-With") == "XMLHttpRequest"
+	return c.GetHeader("Accept") == "application/json" ||
+		c.GetHeader("X-Requested-With") == "XMLHttpRequest"
 }
 
 func ListProducts(c *gin.Context) {

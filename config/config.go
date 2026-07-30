@@ -7,7 +7,6 @@ import (
 type Config struct {
 	Port      string
 	DBPath    string
-	JWTSecret []byte
 	UploadDir string
 }
 
@@ -24,11 +23,6 @@ func LoadConfig() {
 		dbPath = "./data/pos.db"
 	}
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "super-secret-pos-jwt-key-change-me"
-	}
-
 	uploadDir := os.Getenv("UPLOAD_DIR")
 	if uploadDir == "" {
 		uploadDir = "./data/product"
@@ -37,7 +31,6 @@ func LoadConfig() {
 	AppConfig = Config{
 		Port:      port,
 		DBPath:    dbPath,
-		JWTSecret: []byte(jwtSecret),
 		UploadDir: uploadDir,
 	}
 }

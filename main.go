@@ -178,6 +178,7 @@ func main() {
 		&models.CreditNoteItem{},
 		&models.DebitNote{},
 		&models.DebitNoteItem{},
+		&models.Session{},
 	)
 
 	// Backfill codes for legacy orders

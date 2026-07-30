@@ -14,7 +14,7 @@ A multi-shop Point of Sale web application built with **Go (Gin)**, **GORM + SQL
 | Web        | Gin + `html/template`                   |
 | ORM / DB   | GORM + SQLite (`./data/pos.db`)         |
 | Frontend   | Bootstrap 5 (CDN), Chart.js (CDN)       |
-| Auth       | JWT (golang-jwt/jwt) stored in cookie   |
+| Auth       | Session                                 |
 | Validation | go-playground/validator/v10             |
 | Image      | Uploaded to `./data/product/`           |
 
@@ -418,7 +418,6 @@ On startup:
 
 ```
 go get github.com/gin-gonic/gin
-go get github.com/golang-jwt/jwt/v5
 go get github.com/go-playground/validator/v10
 go get golang.org/x/crypto/bcrypt
 ```
@@ -434,7 +433,7 @@ Current deps (keep): `gorm.io/gorm`, `gorm.io/driver/sqlite`.
 | 1     | Project structure + config + models       | `config/`, `models/`, `main.go`          |
 | 2     | Validation setup                          | `utils/validator.go`                     |
 | 3     | Template system + base layout             | `templates/layout/`, static assets       |
-| 4     | JWT auth (login/logout/middleware)         | `handlers/auth.go`, `middleware/`         |
+| 4     | Session auth (login/logout/middleware)         | `handlers/auth.go`, `middleware/`         |
 | 5     | First-run default admin seed              | `main.go` (startup logic)                |
 | 6     | Dashboard (basic)                         | `handlers/dashboard.go`                  |
 | 7     | User management (admin) + create user     | `handlers/user.go`                       |
